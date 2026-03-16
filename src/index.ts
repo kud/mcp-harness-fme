@@ -102,14 +102,17 @@ server.registerTool(
         .default(20)
         .describe("Number of results to return (max 50)"),
       offset: z.number().optional().default(0).describe("Pagination offset"),
-      search: z.string().optional().describe("Filter flags by name"),
+      tag: z
+        .string()
+        .optional()
+        .describe("Filter flags by tag (e.g. 'Mobile Suite')"),
     },
   },
-  async ({ workspace_id, limit, offset, search }) => {
+  async ({ workspace_id, limit, offset, tag }) => {
     const query = new URLSearchParams({
       limit: String(limit),
       offset: String(offset),
-      ...(search ? { q: search } : {}),
+      ...(tag ? { tag } : {}),
     })
     const data = await apiFetch<{ objects: unknown[]; totalCount: number }>(
       `/splits/ws/${workspace_id}?${query}`,
