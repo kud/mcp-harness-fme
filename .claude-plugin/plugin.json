@@ -15,5 +15,12 @@
       "HARNESS_API_KEY": "${MCP_HARNESS_FME_TOKEN}"
     }
   },
+  "requiredEnv": [
+    {
+      "name": "MCP_HARNESS_FME_TOKEN",
+      "description": "Your Harness API key — generate one at app.harness.io under Account Settings → API Keys",
+      "required": true
+    }
+  ],
   "skills": ["feature-flag-status"]
 }
