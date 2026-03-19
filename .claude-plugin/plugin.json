@@ -1,0 +1,19 @@
+{
+  "id": "mcp-harness-fme",
+  "name": "harness-fme",
+  "displayName": "Harness Feature Management",
+  "description": "Inspect and control Harness FME feature flags — list workspaces, browse environments, audit flag targeting rules, and kill or restore flags in a single conversation.",
+  "version": "1.0.0",
+  "author": "kud",
+  "repository": "https://github.com/kud/mcp-harness-fme",
+  "npm": "@kud/mcp-harness-fme",
+  "mcpConfig": {
+    "transport": "stdio",
+    "command": "npx",
+    "args": ["-y", "@kud/mcp-harness-fme@latest"],
+    "env": {
+      "HARNESS_API_KEY": "${MCP_HARNESS_FME_TOKEN}"
+    }
+  },
+  "skills": ["feature-flag-status"]
+}
