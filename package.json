@@ -1,6 +1,6 @@
 {
   "name": "@kud/mcp-harness-fme",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "type": "module",
   "description": "MCP server for Harness FME (Split.io) — read and toggle feature flags.",
   "main": "dist/index.js",
