@@ -302,17 +302,36 @@ Apply and restart the IDE.
 | ------------------- | ------------------------------------ |
 | `list_environments` | List all environments in a workspace |
 
-### 🚩 Feature Flags (5 tools)
+### 🚩 Feature Flags (9 tools)
 
-| Tool                   | Description                                                     |
-| ---------------------- | --------------------------------------------------------------- |
-| `list_feature_flags`   | List feature flags in a workspace (supports search/pagination)  |
-| `get_feature_flag`     | Get metadata for a specific feature flag                        |
-| `get_flag_definition`  | Get targeting rules and treatment definition in an environment  |
-| `kill_feature_flag`    | Kill (disable) a flag — forces all traffic to default treatment |
-| `restore_feature_flag` | Restore (re-enable) a killed feature flag                       |
+| Tool                     | Description                                                             |
+| ------------------------ | ----------------------------------------------------------------------- |
+| `list_feature_flags`     | List feature flags in a workspace (supports tag filter, pagination)     |
+| `get_feature_flag`       | Get metadata for a specific feature flag                                |
+| `create_feature_flag`    | Create a new feature flag for a given traffic type                      |
+| `update_feature_flag`    | Update a flag's description, tags, or owners                            |
+| `delete_feature_flag`    | Permanently delete a feature flag (requires `confirm: true`)            |
+| `list_flag_definitions`  | List all flag definitions (targeting rules) in an environment           |
+| `get_flag_definition`    | Get targeting rules and treatment definition in an environment          |
+| `create_flag_definition` | Activate a flag in an environment with treatments and targeting rules   |
+| `update_flag_definition` | Fully replace a flag's targeting rules in an environment                |
+| `delete_flag_definition` | Remove a flag definition from an environment (requires `confirm: true`) |
+| `kill_feature_flag`      | Kill (disable) a flag — forces all traffic to default treatment         |
+| `restore_feature_flag`   | Restore (re-enable) a killed feature flag                               |
 
-**Total: 7 Tools** covering feature flag visibility and emergency kill-switch operations.
+### 🧩 Segments (1 tool)
+
+| Tool            | Description                      |
+| --------------- | -------------------------------- |
+| `list_segments` | List all segments in a workspace |
+
+### 🔀 Traffic Types (1 tool)
+
+| Tool                 | Description                           |
+| -------------------- | ------------------------------------- |
+| `list_traffic_types` | List all traffic types in a workspace |
+
+**Total: 16 Tools** covering full feature flag lifecycle management.
 
 ---
 
