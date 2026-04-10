@@ -114,7 +114,7 @@ export const getFlagDefinition = async ({
   flag_name: string
 }) => {
   const data = await apiFetch<unknown>(
-    `/splits/ws/${workspace_id}/environments/${environment_id}/${flag_name}`,
+    `/splits/ws/${workspace_id}/${flag_name}/environments/${environment_id}`,
   )
   return data ? ok(data) : err(`failed to fetch flag definition: ${flag_name}`)
 }
@@ -132,7 +132,7 @@ export const killFeatureFlag = async ({
 }) => {
   if (!confirm) return err("set confirm=true to kill this feature flag")
   const data = await apiFetch<unknown>(
-    `/splits/ws/${workspace_id}/environments/${environment_id}/${flag_name}/kill`,
+    `/splits/ws/${workspace_id}/${flag_name}/environments/${environment_id}/kill`,
     { method: "PUT" },
   )
   return data ? ok(data) : err(`failed to kill feature flag: ${flag_name}`)
@@ -148,7 +148,7 @@ export const restoreFeatureFlag = async ({
   flag_name: string
 }) => {
   const data = await apiFetch<unknown>(
-    `/splits/ws/${workspace_id}/environments/${environment_id}/${flag_name}/restore`,
+    `/splits/ws/${workspace_id}/${flag_name}/environments/${environment_id}/restore`,
     { method: "PUT" },
   )
   return data ? ok(data) : err(`failed to restore feature flag: ${flag_name}`)
