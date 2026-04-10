@@ -1,6 +1,8 @@
 {
-  "mcp-harness-fme": {
-    "command": "npx",
-    "args": ["tsx", "src/index.ts"]
+  "mcpServers": {
+    "mcp-harness-fme": {
+      "command": "npx",
+      "args": ["tsx", "src/index.ts"]
+    }
   }
 }
