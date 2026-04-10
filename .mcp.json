@@ -1,9 +1,6 @@
 {
   "mcp-harness-fme": {
-    "command": "node",
-    "args": ["./dist/index.js"],
-    "env": {
-      "HARNESS_API_KEY": "${MCP_HARNESS_FME_TOKEN}"
-    }
+    "command": "npx",
+    "args": ["tsx", "src/index.ts"]
   }
 }
