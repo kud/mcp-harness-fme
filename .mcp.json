@@ -1,7 +1,7 @@
 {
   "mcp-harness-fme": {
-    "command": "npx",
-    "args": ["-y", "@kud/mcp-harness-fme@latest"],
+    "command": "node",
+    "args": ["./dist/index.js"],
     "env": {
       "HARNESS_API_KEY": "${MCP_HARNESS_FME_TOKEN}"
     }
