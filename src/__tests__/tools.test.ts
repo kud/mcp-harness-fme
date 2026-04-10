@@ -123,6 +123,10 @@ describe("getFlagDefinition", () => {
       flag_name: "my-flag",
     })
     expect(result.content[0].text).toContain("on")
+    expect(mockFetch).toHaveBeenCalledWith(
+      expect.stringContaining("/splits/ws/ws1/my-flag/environments/production"),
+      expect.any(Object),
+    )
   })
 
   it("returns error when fetch fails", async () => {
@@ -159,7 +163,9 @@ describe("killFeatureFlag", () => {
     })
     expect(result.content[0].text).toContain("killed")
     expect(mockFetch).toHaveBeenCalledWith(
-      expect.stringContaining("/kill"),
+      expect.stringContaining(
+        "/splits/ws/ws1/my-flag/environments/production/kill",
+      ),
       expect.objectContaining({ method: "PUT" }),
     )
   })
@@ -186,7 +192,9 @@ describe("restoreFeatureFlag", () => {
     })
     expect(result.content[0].text).toContain("killed")
     expect(mockFetch).toHaveBeenCalledWith(
-      expect.stringContaining("/restore"),
+      expect.stringContaining(
+        "/splits/ws/ws1/my-flag/environments/production/restore",
+      ),
       expect.objectContaining({ method: "PUT" }),
     )
   })
