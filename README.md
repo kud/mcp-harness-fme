@@ -26,13 +26,15 @@
 
 ## 🌟 Features
 
-- **🚩 Feature Flag Management** - List, inspect, kill, and restore flags across any workspace
+- **🚩 Feature Flag Management** - List, inspect, create, update, kill, archive, and restore flags across any workspace
+- **🧩 Rule-Based Segments** - Full lifecycle management of rule-based segments and their environment definitions
+- **📊 Rollout Statuses** - Discover and filter flags by rollout status (Pre-Production, Ramping, etc.)
 - **🔐 Simple Authentication** - Single API key, zero config friction
 - **🌍 Multi-Workspace Support** - Work across any number of Harness FME workspaces
 - **🌿 Environment-Aware** - Target flags in specific environments (staging, production, etc.)
 - **⚡ Modern Stack** - TypeScript 5+, ES2023, Native Fetch API, ESM
 - **📦 MCP Protocol** - Native integration with Claude Desktop, Claude Code CLI, Cursor, and more
-- **🔒 Safety Guard** - Kill operations require explicit `confirm: true` — no accidental flag kills
+- **🔒 Safety Guards** - Destructive operations require explicit `confirm: true` — no accidental kills or deletions
 
 ---
 
@@ -302,24 +304,46 @@ Apply and restart the IDE.
 | ------------------- | ------------------------------------ |
 | `list_environments` | List all environments in a workspace |
 
-### 🚩 Feature Flags (9 tools)
+### 📊 Rollout Statuses (1 tool)
 
-| Tool                     | Description                                                             |
-| ------------------------ | ----------------------------------------------------------------------- |
-| `list_feature_flags`     | List feature flags in a workspace (supports tag filter, pagination)     |
-| `get_feature_flag`       | Get metadata for a specific feature flag                                |
-| `create_feature_flag`    | Create a new feature flag for a given traffic type                      |
-| `update_feature_flag`    | Update a flag's description, tags, or owners                            |
-| `delete_feature_flag`    | Permanently delete a feature flag (requires `confirm: true`)            |
-| `list_flag_definitions`  | List all flag definitions (targeting rules) in an environment           |
-| `get_flag_definition`    | Get targeting rules and treatment definition in an environment          |
-| `create_flag_definition` | Activate a flag in an environment with treatments and targeting rules   |
-| `update_flag_definition` | Fully replace a flag's targeting rules in an environment                |
-| `delete_flag_definition` | Remove a flag definition from an environment (requires `confirm: true`) |
-| `kill_feature_flag`      | Kill (disable) a flag — forces all traffic to default treatment         |
-| `restore_feature_flag`   | Restore (re-enable) a killed feature flag                               |
+| Tool                    | Description                                                                                                    |
+| ----------------------- | -------------------------------------------------------------------------------------------------------------- |
+| `list_rollout_statuses` | List rollout status definitions (e.g. Pre-Production, Ramping, Permanent) — use returned UUIDs to filter flags |
 
-### 🧩 Segments (1 tool)
+### 🚩 Feature Flags (14 tools)
+
+| Tool                     | Description                                                                                |
+| ------------------------ | ------------------------------------------------------------------------------------------ |
+| `list_feature_flags`     | List flags in a workspace — filter by tag, name, or rollout status; paginated              |
+| `get_feature_flag`       | Get metadata for a specific feature flag                                                   |
+| `create_feature_flag`    | Create a new feature flag for a given traffic type                                         |
+| `update_feature_flag`    | Update a flag's description, tags, owners, or rollout status (JSON Patch)                  |
+| `delete_feature_flag`    | Permanently delete a feature flag (requires `confirm: true`)                               |
+| `archive_feature_flag`   | Archive a flag — removes it from active use, preserving history (requires `confirm: true`) |
+| `unarchive_feature_flag` | Restore an archived feature flag to active use                                             |
+| `kill_feature_flag`      | Kill (disable) a flag — forces all traffic to the default treatment                        |
+| `restore_feature_flag`   | Restore (re-enable) a killed feature flag                                                  |
+| `list_flag_definitions`  | List all flag definitions (targeting rules) in an environment                              |
+| `get_flag_definition`    | Get targeting rules and treatment definition in a specific environment                     |
+| `create_flag_definition` | Activate a flag in an environment with treatments and targeting rules                      |
+| `update_flag_definition` | Fully replace a flag's targeting rules in an environment                                   |
+| `delete_flag_definition` | Remove a flag definition from an environment (requires `confirm: true`)                    |
+
+### 🧩 Rule-Based Segments (9 tools)
+
+| Tool                                       | Description                                                                             |
+| ------------------------------------------ | --------------------------------------------------------------------------------------- |
+| `list_rule_based_segments`                 | List all rule-based segments in a workspace                                             |
+| `get_rule_based_segment`                   | Get a segment's workspace-level metadata by name                                        |
+| `create_rule_based_segment`                | Create a new rule-based segment under a traffic type                                    |
+| `delete_rule_based_segment`                | Permanently delete a segment from a workspace (requires `confirm: true`)                |
+| `list_rule_based_segment_definitions`      | List segment definitions in a specific environment                                      |
+| `update_rule_based_segment_definition`     | Update a segment definition's rules, exclusions, and matchers in an environment         |
+| `enable_rule_based_segment_definition`     | Activate a segment in an environment (creates an empty definition)                      |
+| `disable_rule_based_segment_definition`    | Remove a segment from an environment (requires `confirm: true`)                         |
+| `create_rule_based_segment_change_request` | Submit a change request for a segment definition — supports approval flow via approvers |
+
+### 📂 Segments (1 tool)
 
 | Tool            | Description                      |
 | --------------- | -------------------------------- |
@@ -331,7 +355,7 @@ Apply and restart the IDE.
 | -------------------- | ------------------------------------- |
 | `list_traffic_types` | List all traffic types in a workspace |
 
-**Total: 16 Tools** covering full feature flag lifecycle management.
+**Total: 28 Tools** covering full feature flag and rule-based segment lifecycle management.
 
 ---
 

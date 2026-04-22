@@ -23,7 +23,7 @@ describe("listWorkspaces", () => {
     const result = await api.listWorkspaces({ limit: 20, offset: 0 })
     expect(result.content[0].text).toContain("ws1")
     expect(mockFetch).toHaveBeenCalledWith(
-      expect.stringContaining("/workspaces?limit=20&offset=0"),
+      expect.stringContaining("/workspaces?size=20&offset=0"),
       expect.any(Object),
     )
   })
@@ -524,5 +524,228 @@ describe("listTrafficTypes", () => {
     mockFetch.mockReturnValue(errorResponse())
     const result = await api.listTrafficTypes({ workspace_id: "ws1" })
     expect(result.content[0].text).toContain("Error:")
+  })
+})
+
+// ─── Rollout Statuses ───
+
+describe("listRolloutStatuses", () => {
+  it("returns statuses on success", async () => {
+    mockFetch.mockReturnValue(
+      jsonResponse({ objects: [{ name: "Pre-Production" }] }),
+    )
+    const result = await api.listRolloutStatuses({ workspace_id: "ws1" })
+    expect(result.content[0].text).toContain("Pre-Production")
+    expect(mockFetch).toHaveBeenCalledWith(
+      expect.stringContaining("/rolloutStatuses/ws/ws1"),
+      expect.any(Object),
+    )
+  })
+
+  it("returns error when fetch fails", async () => {
+    mockFetch.mockReturnValue(errorResponse())
+    const result = await api.listRolloutStatuses({ workspace_id: "ws1" })
+    expect(result.content[0].text).toContain("Error:")
+  })
+})
+
+// ─── Feature Flag Archive ───
+
+describe("archiveFeatureFlag", () => {
+  it("blocks execution without confirm", async () => {
+    const result = await api.archiveFeatureFlag({
+      workspace_id: "ws1",
+      flag_name: "my-flag",
+      confirm: false,
+    })
+    expect(result.content[0].text).toContain("Error:")
+    expect(result.content[0].text).toContain("confirm=true")
+    expect(mockFetch).not.toHaveBeenCalled()
+  })
+
+  it("archives flag when confirmed", async () => {
+    mockFetch.mockReturnValue(jsonResponse({ archived: true }))
+    const result = await api.archiveFeatureFlag({
+      workspace_id: "ws1",
+      flag_name: "my-flag",
+      confirm: true,
+    })
+    expect(result.content[0].text).toContain("archived")
+    expect(mockFetch).toHaveBeenCalledWith(
+      expect.stringContaining("/splits/ws/ws1/my-flag/archive"),
+      expect.objectContaining({ method: "POST" }),
+    )
+  })
+})
+
+describe("unarchiveFeatureFlag", () => {
+  it("unarchives flag on success", async () => {
+    mockFetch.mockReturnValue(jsonResponse({ archived: false }))
+    const result = await api.unarchiveFeatureFlag({
+      workspace_id: "ws1",
+      flag_name: "my-flag",
+    })
+    expect(result.content[0].text).toContain("archived")
+    expect(mockFetch).toHaveBeenCalledWith(
+      expect.stringContaining("/splits/ws/ws1/my-flag/unarchive"),
+      expect.objectContaining({ method: "POST" }),
+    )
+  })
+
+  it("returns error when api fails", async () => {
+    mockFetch.mockReturnValue(errorResponse())
+    const result = await api.unarchiveFeatureFlag({
+      workspace_id: "ws1",
+      flag_name: "my-flag",
+    })
+    expect(result.content[0].text).toContain("Error:")
+  })
+})
+
+// ─── Rule-Based Segments ───
+
+describe("listRuleBasedSegments", () => {
+  it("returns segments on success", async () => {
+    mockFetch.mockReturnValue(
+      jsonResponse({ objects: [{ name: "power-users" }], totalCount: 1 }),
+    )
+    const result = await api.listRuleBasedSegments({
+      workspace_id: "ws1",
+      limit: 20,
+      offset: 0,
+    })
+    expect(result.content[0].text).toContain("power-users")
+    expect(mockFetch).toHaveBeenCalledWith(
+      expect.stringContaining("/rule-based-segments/ws/ws1"),
+      expect.any(Object),
+    )
+  })
+
+  it("returns error when fetch fails", async () => {
+    mockFetch.mockReturnValue(errorResponse())
+    const result = await api.listRuleBasedSegments({
+      workspace_id: "ws1",
+      limit: 20,
+      offset: 0,
+    })
+    expect(result.content[0].text).toContain("Error:")
+  })
+})
+
+describe("getRuleBasedSegment", () => {
+  it("returns segment on success", async () => {
+    mockFetch.mockReturnValue(jsonResponse({ name: "power-users" }))
+    const result = await api.getRuleBasedSegment({
+      workspace_id: "ws1",
+      segment_name: "power-users",
+    })
+    expect(result.content[0].text).toContain("power-users")
+  })
+
+  it("returns error when fetch fails", async () => {
+    mockFetch.mockReturnValue(errorResponse())
+    const result = await api.getRuleBasedSegment({
+      workspace_id: "ws1",
+      segment_name: "power-users",
+    })
+    expect(result.content[0].text).toContain("Error:")
+  })
+})
+
+describe("createRuleBasedSegment", () => {
+  it("creates segment on success", async () => {
+    mockFetch.mockReturnValue(jsonResponse({ name: "power-users" }))
+    const result = await api.createRuleBasedSegment({
+      workspace_id: "ws1",
+      traffic_type: "user",
+      name: "power-users",
+    })
+    expect(result.content[0].text).toContain("power-users")
+    expect(mockFetch).toHaveBeenCalledWith(
+      expect.stringContaining("/rule-based-segments/ws/ws1/trafficTypes/user"),
+      expect.objectContaining({ method: "POST" }),
+    )
+  })
+
+  it("returns error when api fails", async () => {
+    mockFetch.mockReturnValue(errorResponse())
+    const result = await api.createRuleBasedSegment({
+      workspace_id: "ws1",
+      traffic_type: "user",
+      name: "power-users",
+    })
+    expect(result.content[0].text).toContain("Error:")
+  })
+})
+
+describe("deleteRuleBasedSegment", () => {
+  it("blocks execution without confirm", async () => {
+    const result = await api.deleteRuleBasedSegment({
+      workspace_id: "ws1",
+      segment_name: "power-users",
+      confirm: false,
+    })
+    expect(result.content[0].text).toContain("Error:")
+    expect(result.content[0].text).toContain("confirm=true")
+    expect(mockFetch).not.toHaveBeenCalled()
+  })
+
+  it("deletes segment when confirmed", async () => {
+    mockFetch.mockReturnValue(Promise.resolve({ ok: true }))
+    const result = await api.deleteRuleBasedSegment({
+      workspace_id: "ws1",
+      segment_name: "power-users",
+      confirm: true,
+    })
+    expect(result.content[0].text).toContain("power-users")
+    expect(mockFetch).toHaveBeenCalledWith(
+      expect.stringContaining("/rule-based-segments/ws/ws1/power-users"),
+      expect.objectContaining({ method: "DELETE" }),
+    )
+  })
+})
+
+describe("enableRuleBasedSegmentDefinition", () => {
+  it("enables segment definition on success", async () => {
+    mockFetch.mockReturnValue(jsonResponse({}))
+    const result = await api.enableRuleBasedSegmentDefinition({
+      workspace_id: "ws1",
+      environment_id: "production",
+      segment_name: "power-users",
+    })
+    expect(result.content[0].text).toBeDefined()
+    expect(mockFetch).toHaveBeenCalledWith(
+      expect.stringContaining("/rule-based-segments/production/power-users"),
+      expect.objectContaining({ method: "POST" }),
+    )
+  })
+})
+
+describe("disableRuleBasedSegmentDefinition", () => {
+  it("blocks execution without confirm", async () => {
+    const result = await api.disableRuleBasedSegmentDefinition({
+      workspace_id: "ws1",
+      environment_id: "production",
+      segment_name: "power-users",
+      confirm: false,
+    })
+    expect(result.content[0].text).toContain("Error:")
+    expect(result.content[0].text).toContain("confirm=true")
+    expect(mockFetch).not.toHaveBeenCalled()
+  })
+
+  it("disables segment definition when confirmed", async () => {
+    mockFetch.mockReturnValue(Promise.resolve({ ok: true }))
+    const result = await api.disableRuleBasedSegmentDefinition({
+      workspace_id: "ws1",
+      environment_id: "production",
+      segment_name: "power-users",
+      confirm: true,
+    })
+    expect(result.content[0].text).toContain("power-users")
+    expect(mockFetch).toHaveBeenCalledWith(
+      expect.stringContaining("/rule-based-segments/production/power-users"),
+      expect.objectContaining({ method: "DELETE" }),
+    )
   })
 })
