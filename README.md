@@ -16,7 +16,7 @@
 [![MCP](https://img.shields.io/badge/MCP-1.10-purple?logo=anthropic)](https://modelcontextprotocol.io/)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
-**A Harness FME (Split.io) MCP server — read and toggle feature flags from your AI assistant**
+**A Harness FME MCP server — read and toggle feature flags from your AI assistant**
 
 [Features](#-features) • [Quick Start](#-quick-start) • [Installation](#-installation-guides) • [Tools](#-available-tools) • [Development](#-development)
 
@@ -449,7 +449,7 @@ The server exits immediately at startup if the key is missing — no silent fail
 
 ### Getting Your Harness FME API Key
 
-1. Log in to your [Harness FME account](https://app.split.io)
+1. Log in to your [Harness account](https://app.harness.io) and navigate to the FME module
 2. Go to **Admin Settings** → **API Keys**
 3. Click **Add API Key**
 4. Select type **Admin** (required for management operations)
@@ -556,7 +556,7 @@ MIT License — see [LICENSE](LICENSE) file
 ## 🙏 Acknowledgments
 
 - Built with [Model Context Protocol](https://modelcontextprotocol.io/)
-- Powered by the [Harness FME (Split.io) REST API](https://docs.split.io/reference)
+- Powered by the [Harness FME REST API](https://docs.split.io/reference)
 
 ---
 
