@@ -303,7 +303,7 @@ export const listFlagDefinitions = async ({
     offset: String(offset),
   })
   const result = await apiFetch<{ objects: unknown[]; totalCount: number }>(
-    `/splits/ws/${workspace_id}/environments/${environment_id}/splits?${query}`,
+    `/splitDefinitions/ws/${workspace_id}/environments/${environment_id}?${query}`,
   )
   return result.ok
     ? ok(result.data)
