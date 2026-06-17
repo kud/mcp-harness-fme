@@ -1,9 +1,9 @@
 ---
-title: Troubleshooting
+title: 🩺 Troubleshooting
 description: Fixes for the common failure modes — missing API key, server not appearing, authentication errors, and where to find logs.
 ---
 
-## Server not showing in the client
+## 👻 Server not showing in the client
 
 1. Check that `MCP_HARNESS_FME_API_KEY` is set in the server's `env` block — the
    server exits at startup without it.
@@ -17,7 +17,7 @@ For the Claude Code CLI, inspect the registered server:
 claude mcp get harness-fme
 ```
 
-## Authentication errors
+## 🔐 Authentication errors
 
 If tools return errors like `401` or `403`, your key is missing, wrong, or lacks
 the **Admin** scope. Test it directly against the FME REST API:
@@ -32,20 +32,20 @@ the server (check the `env` block in your MCP config). Management operations
 (create, update, kill, delete) require an **Admin** key — read-only keys will fail
 on writes.
 
-## A destructive tool returned "set confirm=true"
+## 🛡️ A destructive tool returned "set confirm=true"
 
 That is the safety guard working as intended. `kill_feature_flag`,
 `delete_feature_flag`, `archive_feature_flag`, `delete_flag_definition`,
 `delete_rule_based_segment`, and `disable_rule_based_segment_definition` all
 require `confirm: true`. Re-issue the call with the confirmation argument.
 
-## Archive fails with 409
+## 🚧 Archive fails with 409
 
 `archive_feature_flag` is subject to OPA policy checks on your account. A `409`
 means a policy is blocking the archive (for example, the flag is still referenced
 or not yet stale). Resolve the policy condition in the Harness UI, then retry.
 
-## Where to find logs
+## 📜 Where to find logs
 
 **Claude Desktop:**
 
@@ -55,7 +55,7 @@ or not yet stale). Resolve the policy condition in the Harness UI, then retry.
 The server also logs its own errors to stderr, including API error responses with
 the failing path — useful when running it directly with `npm run dev`.
 
-## Local development checks
+## 🧪 Local development checks
 
 If you're running from source rather than the published package:
 

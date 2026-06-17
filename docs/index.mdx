@@ -1,5 +1,5 @@
 ---
-title: Introduction
+title: 👋 Introduction
 description: An MCP server for Harness FME (Split.io) — read, toggle, and manage feature flags and segments from your AI assistant.
 ---
 
@@ -12,7 +12,7 @@ environments directly from Claude, Cursor, or any MCP-compatible client.
 One API key, zero config friction. Destructive operations are gated behind an
 explicit `confirm: true` guard.
 
-## Features
+## ✨ Features
 
 - **Feature flag management** — list, inspect, create, update, kill, restore,
   archive, and delete flags across any workspace and environment.
@@ -27,7 +27,7 @@ explicit `confirm: true` guard.
 - **Modern stack** — TypeScript 5+, ESM, native Fetch, Zod schemas, stdio
   transport.
 
-## Install
+## 📦 Install
 
 Add the server to your MCP client with the published package — no clone required:
 
@@ -58,7 +58,7 @@ and set the `MCP_HARNESS_FME_API_KEY` environment variable.
 
 Restart the client after editing its config.
 
-## Authentication
+## 🔐 Authentication
 
 The server needs a single environment variable:
 
@@ -83,7 +83,7 @@ failures.
 All requests are sent to the FME REST API at
 `https://api.split.io/internal/api/v2` with a `Bearer` token.
 
-## Safety guards
+## 🛡️ Safety guards
 
 Every destructive operation is gated behind an explicit `confirm: true` argument.
 Calling one without it returns an error instead of performing the action:
@@ -100,7 +100,7 @@ Calling one without it returns an error instead of performing the action:
 This makes it safe to let an AI assistant explore your flags — it cannot kill or
 delete anything without you (or the model) deliberately passing the confirmation.
 
-## Tools at a glance
+## 🧰 Tools at a glance
 
 The server registers **28 tools** across four areas:
 
@@ -113,7 +113,7 @@ The server registers **28 tools** across four areas:
 - [Troubleshooting](/projects/mcp-harness-fme/docs/troubleshooting) — when the
   server or a request misbehaves.
 
-## Example conversation
+## 💬 Example conversation
 
 Once configured, you can drive everything in natural language:
 

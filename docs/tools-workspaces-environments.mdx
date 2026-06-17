@@ -1,5 +1,5 @@
 ---
-title: Workspaces & environments
+title: 🗂️ Workspaces & environments
 description: Discovery tools for finding the workspace, environment, and traffic-type IDs that every other tool needs.
 ---
 
@@ -9,7 +9,7 @@ identifiers. Start here, then feed the IDs into the
 [flag](/projects/mcp-harness-fme/docs/tools-flags) and
 [segment](/projects/mcp-harness-fme/docs/tools-segments) tools.
 
-## Workspaces
+## 🗂️ Workspaces
 
 ### `list_workspaces`
 
@@ -22,7 +22,7 @@ List all FME workspaces in the account.
 
 The returned objects contain the `id` you pass as `workspace_id` everywhere else.
 
-## Environments
+## 🌍 Environments
 
 ### `list_environments`
 
@@ -35,7 +35,7 @@ List all environments in a workspace (e.g. _Staging_, _Production_).
 Environment tools accept either the environment **ID or name** as
 `environment_id`.
 
-## Traffic types
+## 🚦 Traffic types
 
 ### `list_traffic_types`
 
@@ -46,7 +46,7 @@ type to create a feature flag or a rule-based segment.
 | -------------- | ------ | ---------------- |
 | `workspace_id` | string | The workspace ID |
 
-## A typical discovery flow
+## 🧭 A typical discovery flow
 
 ```
 1. list_workspaces            → pick a workspace_id

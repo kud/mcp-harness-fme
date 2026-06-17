@@ -1,5 +1,5 @@
 ---
-title: Feature flag tools
+title: 🚩 Feature flag tools
 description: List, inspect, create, update, kill, restore, archive, and delete feature flags and their per-environment definitions.
 ---
 
@@ -12,7 +12,7 @@ on its definition in a given environment.
 > All tools take a `workspace_id`. Discover IDs with the
 > [workspace & environment tools](/projects/mcp-harness-fme/docs/tools-workspaces-environments).
 
-## Flag metadata
+## 🏷️ Flag metadata
 
 ### `list_feature_flags`
 
@@ -91,7 +91,7 @@ Unarchive a previously archived flag, restoring it to active use.
 | `workspace_id` | string | The workspace ID      |
 | `flag_name`    | string | The feature flag name |
 
-## Kill switch
+## 🔌 Kill switch
 
 ### `kill_feature_flag`
 
@@ -116,7 +116,7 @@ routing.
 | `environment_id` | string | The environment ID or name |
 | `flag_name`      | string | The feature flag name      |
 
-## Flag definitions (per environment)
+## 🎯 Flag definitions (per environment)
 
 A flag definition holds the treatments and targeting rules for a flag **in one
 environment**. The flag can exist without a definition in a given environment.
@@ -178,7 +178,7 @@ its targeting rules in that environment.
 | `flag_name`      | string  | —       | The feature flag name      |
 | `confirm`        | boolean | `false` | Must be `true` to execute  |
 
-## Rollout statuses
+## 📊 Rollout statuses
 
 ### `list_rollout_statuses`
 
