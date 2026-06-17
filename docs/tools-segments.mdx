@@ -1,0 +1,131 @@
+---
+title: Segment tools
+description: Manage rule-based segments and their per-environment definitions, plus classic segments and the change-request approval flow.
+---
+
+FME has two kinds of segments. **Rule-based segments** are dynamic — membership is
+computed from rules, exclusions, and matchers — and they have both workspace-level
+metadata and per-environment definitions, much like feature flags. The classic
+`list_segments` tool covers standard (key-list) segments.
+
+> All tools take a `workspace_id`. Discover IDs with the
+> [workspace & environment tools](/projects/mcp-harness-fme/docs/tools-workspaces-environments).
+
+## Rule-based segment metadata
+
+### `list_rule_based_segments`
+
+List all rule-based segments in a workspace.
+
+| Argument       | Type   | Default | Description                 |
+| -------------- | ------ | ------- | --------------------------- |
+| `workspace_id` | string | —       | The workspace ID            |
+| `limit`        | number | `20`    | Number of results to return |
+| `offset`       | number | `0`     | Pagination offset           |
+
+### `get_rule_based_segment`
+
+Get a rule-based segment's workspace-level metadata by name.
+
+| Argument       | Type   | Description      |
+| -------------- | ------ | ---------------- |
+| `workspace_id` | string | The workspace ID |
+| `segment_name` | string | The segment name |
+
+### `create_rule_based_segment`
+
+Create a new rule-based segment in a workspace under a specific traffic type.
+
+| Argument       | Type   | Description                             |
+| -------------- | ------ | --------------------------------------- |
+| `workspace_id` | string | The workspace ID                        |
+| `traffic_type` | string | The traffic type ID or name             |
+| `name`         | string | The segment name (unique per workspace) |
+| `description`  | string | Optional description                    |
+
+### `delete_rule_based_segment`
+
+Permanently delete a rule-based segment from a workspace. Environment-level configs
+must be removed separately.
+
+| Argument       | Type    | Default | Description               |
+| -------------- | ------- | ------- | ------------------------- |
+| `workspace_id` | string  | —       | The workspace ID          |
+| `segment_name` | string  | —       | The segment name          |
+| `confirm`      | boolean | `false` | Must be `true` to execute |
+
+## Rule-based segment definitions (per environment)
+
+### `list_rule_based_segment_definitions`
+
+List rule-based segment definitions in a specific environment.
+
+| Argument         | Type   | Description                |
+| ---------------- | ------ | -------------------------- |
+| `workspace_id`   | string | The workspace ID           |
+| `environment_id` | string | The environment ID or name |
+
+### `enable_rule_based_segment_definition`
+
+Enable (activate) a rule-based segment in a specific environment — creates an empty
+definition that you can then configure via `update_rule_based_segment_definition`.
+
+| Argument         | Type   | Description                |
+| ---------------- | ------ | -------------------------- |
+| `workspace_id`   | string | The workspace ID           |
+| `environment_id` | string | The environment ID or name |
+| `segment_name`   | string | The segment name           |
+
+### `update_rule_based_segment_definition`
+
+Update a rule-based segment definition in an environment (rules, exclusions,
+matchers).
+
+| Argument         | Type   | Description                                                                             |
+| ---------------- | ------ | --------------------------------------------------------------------------------------- |
+| `workspace_id`   | string | The workspace ID                                                                        |
+| `environment_id` | string | The environment ID or name                                                              |
+| `segment_name`   | string | The segment name                                                                        |
+| `definition`     | string | Full definition as a JSON string — includes `rules`, `excludedKeys`, `excludedSegments` |
+
+### `disable_rule_based_segment_definition`
+
+Disable (remove) a rule-based segment from a specific environment. Workspace-level
+metadata is preserved.
+
+| Argument         | Type    | Default | Description                |
+| ---------------- | ------- | ------- | -------------------------- |
+| `workspace_id`   | string  | —       | The workspace ID           |
+| `environment_id` | string  | —       | The environment ID or name |
+| `segment_name`   | string  | —       | The segment name           |
+| `confirm`        | boolean | `false` | Must be `true` to execute  |
+
+## Change requests
+
+### `create_rule_based_segment_change_request`
+
+Submit a change request for a rule-based segment definition. Supports an approval
+flow via `approvers` — useful when your environment requires sign-off before
+segment changes ship.
+
+| Argument             | Type   | Description                                      |
+| -------------------- | ------ | ------------------------------------------------ |
+| `workspace_id`       | string | The workspace ID                                 |
+| `environment_id`     | string | The environment ID or name                       |
+| `title`              | string | Change request title                             |
+| `operation_type`     | string | Change operation type (e.g. `UPDATE`)            |
+| `rule_based_segment` | string | The segment definition to apply as a JSON string |
+| `comment`            | string | Optional comment for the change request          |
+| `approvers`          | array  | Email addresses of approvers                     |
+
+## Classic segments
+
+### `list_segments`
+
+List all (standard) segments in a workspace.
+
+| Argument       | Type   | Default | Description                 |
+| -------------- | ------ | ------- | --------------------------- |
+| `workspace_id` | string | —       | The workspace ID            |
+| `limit`        | number | `20`    | Number of results to return |
+| `offset`       | number | `0`     | Pagination offset           |

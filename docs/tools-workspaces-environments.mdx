@@ -1,0 +1,58 @@
+---
+title: Workspaces & environments
+description: Discovery tools for finding the workspace, environment, and traffic-type IDs that every other tool needs.
+---
+
+Almost every tool in this server takes a `workspace_id`, and many take an
+`environment_id` or `traffic_type`. These discovery tools are how you find those
+identifiers. Start here, then feed the IDs into the
+[flag](/projects/mcp-harness-fme/docs/tools-flags) and
+[segment](/projects/mcp-harness-fme/docs/tools-segments) tools.
+
+## Workspaces
+
+### `list_workspaces`
+
+List all FME workspaces in the account.
+
+| Argument | Type   | Default | Description                 |
+| -------- | ------ | ------- | --------------------------- |
+| `limit`  | number | `20`    | Number of results to return |
+| `offset` | number | `0`     | Pagination offset           |
+
+The returned objects contain the `id` you pass as `workspace_id` everywhere else.
+
+## Environments
+
+### `list_environments`
+
+List all environments in a workspace (e.g. _Staging_, _Production_).
+
+| Argument       | Type   | Description      |
+| -------------- | ------ | ---------------- |
+| `workspace_id` | string | The workspace ID |
+
+Environment tools accept either the environment **ID or name** as
+`environment_id`.
+
+## Traffic types
+
+### `list_traffic_types`
+
+List all traffic types in a workspace (e.g. `user`, `account`). You need a traffic
+type to create a feature flag or a rule-based segment.
+
+| Argument       | Type   | Description      |
+| -------------- | ------ | ---------------- |
+| `workspace_id` | string | The workspace ID |
+
+## A typical discovery flow
+
+```
+1. list_workspaces            → pick a workspace_id
+2. list_environments          → pick an environment_id (for definition tools)
+3. list_traffic_types         → pick a traffic_type (for create_* tools)
+4. list_rollout_statuses      → pick a rollout_status_id (to filter or set status)
+```
+
+From there you can list, inspect, and modify flags and segments with full context.

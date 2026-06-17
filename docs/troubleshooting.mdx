@@ -1,0 +1,69 @@
+---
+title: Troubleshooting
+description: Fixes for the common failure modes — missing API key, server not appearing, authentication errors, and where to find logs.
+---
+
+## Server not showing in the client
+
+1. Check that `MCP_HARNESS_FME_API_KEY` is set in the server's `env` block — the
+   server exits at startup without it.
+2. Confirm the command resolves: `npx --yes @kud/mcp-harness-fme@latest` should
+   download and run without errors.
+3. Restart the client completely (quit, don't just reload).
+
+For the Claude Code CLI, inspect the registered server:
+
+```bash
+claude mcp get harness-fme
+```
+
+## Authentication errors
+
+If tools return errors like `401` or `403`, your key is missing, wrong, or lacks
+the **Admin** scope. Test it directly against the FME REST API:
+
+```bash
+curl -H "Authorization: Bearer your_api_key" \
+  https://api.split.io/internal/api/v2/workspaces
+```
+
+If this returns JSON, your key is valid and the problem is in how the key reaches
+the server (check the `env` block in your MCP config). Management operations
+(create, update, kill, delete) require an **Admin** key — read-only keys will fail
+on writes.
+
+## A destructive tool returned "set confirm=true"
+
+That is the safety guard working as intended. `kill_feature_flag`,
+`delete_feature_flag`, `archive_feature_flag`, `delete_flag_definition`,
+`delete_rule_based_segment`, and `disable_rule_based_segment_definition` all
+require `confirm: true`. Re-issue the call with the confirmation argument.
+
+## Archive fails with 409
+
+`archive_feature_flag` is subject to OPA policy checks on your account. A `409`
+means a policy is blocking the archive (for example, the flag is still referenced
+or not yet stale). Resolve the policy condition in the Harness UI, then retry.
+
+## Where to find logs
+
+**Claude Desktop:**
+
+- macOS: `~/Library/Logs/Claude/mcp*.log`
+- Windows: `%APPDATA%\Claude\logs\mcp*.log`
+
+The server also logs its own errors to stderr, including API error responses with
+the failing path — useful when running it directly with `npm run dev`.
+
+## Local development checks
+
+If you're running from source rather than the published package:
+
+```bash
+npm install
+npm run typecheck
+npm run dev
+```
+
+`npm run inspect:dev` opens the MCP inspector at `http://localhost:5173` so you can
+exercise every tool interactively.

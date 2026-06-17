@@ -1,0 +1,135 @@
+---
+title: Introduction
+description: An MCP server for Harness FME (Split.io) — read, toggle, and manage feature flags and segments from your AI assistant.
+---
+
+**mcp-harness-fme** is a [Model Context Protocol](https://modelcontextprotocol.io/)
+server for [Harness FME](https://www.harness.io/products/feature-management-experimentation)
+(formerly Split.io). It exposes the FME REST API as MCP tools, so you can inspect
+and toggle feature flags, manage rule-based segments, and walk your workspaces and
+environments directly from Claude, Cursor, or any MCP-compatible client.
+
+One API key, zero config friction. Destructive operations are gated behind an
+explicit `confirm: true` guard.
+
+## Features
+
+- **Feature flag management** — list, inspect, create, update, kill, restore,
+  archive, and delete flags across any workspace and environment.
+- **Rule-based segments** — full lifecycle management of segments and their
+  per-environment definitions, including a change-request approval flow.
+- **Rollout statuses** — discover rollout status definitions and filter flags by
+  them.
+- **Multi-workspace, environment-aware** — target any workspace and scope
+  operations to specific environments (staging, production, etc.).
+- **Safety guards** — every destructive operation (`kill`, `delete`, `archive`,
+  `disable`) requires `confirm: true`, so there are no accidental kills.
+- **Modern stack** — TypeScript 5+, ESM, native Fetch, Zod schemas, stdio
+  transport.
+
+## Install
+
+Add the server to your MCP client with the published package — no clone required:
+
+```bash
+claude mcp add --transport stdio --scope user harness-fme \
+  --env MCP_HARNESS_FME_API_KEY=your_api_key \
+  -- npx --yes @kud/mcp-harness-fme@latest
+```
+
+Any MCP client works — point its config at `npx --yes @kud/mcp-harness-fme@latest`
+and set the `MCP_HARNESS_FME_API_KEY` environment variable.
+
+### Claude Desktop
+
+```json
+{
+  "mcpServers": {
+    "harness-fme": {
+      "command": "npx",
+      "args": ["--yes", "@kud/mcp-harness-fme@latest"],
+      "env": {
+        "MCP_HARNESS_FME_API_KEY": "your_api_key"
+      }
+    }
+  }
+}
+```
+
+Restart the client after editing its config.
+
+## Authentication
+
+The server needs a single environment variable:
+
+| Variable                  | Required | Description              |
+| ------------------------- | -------- | ------------------------ |
+| `MCP_HARNESS_FME_API_KEY` | Yes      | Your Harness FME API key |
+
+The server exits immediately at startup if the key is missing — no silent
+failures.
+
+### Getting an API key
+
+1. Log in to your [Harness account](https://app.harness.io) and open the FME module.
+2. Go to **Admin Settings → API Keys**.
+3. Click **Add API Key** and select type **Admin** (required for management
+   operations).
+4. Copy the key and store it somewhere safe.
+
+> **Important:** Admin API keys have full read/write access to your workspace.
+> Treat them like passwords — never commit them to version control.
+
+All requests are sent to the FME REST API at
+`https://api.split.io/internal/api/v2` with a `Bearer` token.
+
+## Safety guards
+
+Every destructive operation is gated behind an explicit `confirm: true` argument.
+Calling one without it returns an error instead of performing the action:
+
+| Operation                               | Guard           |
+| --------------------------------------- | --------------- |
+| `kill_feature_flag`                     | `confirm: true` |
+| `delete_feature_flag`                   | `confirm: true` |
+| `archive_feature_flag`                  | `confirm: true` |
+| `delete_flag_definition`                | `confirm: true` |
+| `delete_rule_based_segment`             | `confirm: true` |
+| `disable_rule_based_segment_definition` | `confirm: true` |
+
+This makes it safe to let an AI assistant explore your flags — it cannot kill or
+delete anything without you (or the model) deliberately passing the confirmation.
+
+## Tools at a glance
+
+The server registers **28 tools** across four areas:
+
+- [Feature flags](/projects/mcp-harness-fme/docs/tools-flags) — 14 tools plus 3
+  rollout-status / traffic-type helpers.
+- [Segments](/projects/mcp-harness-fme/docs/tools-segments) — 9 rule-based segment
+  tools plus the classic `list_segments`.
+- [Workspaces & environments](/projects/mcp-harness-fme/docs/tools-workspaces-environments)
+  — the discovery tools you use to find IDs.
+- [Troubleshooting](/projects/mcp-harness-fme/docs/troubleshooting) — when the
+  server or a request misbehaves.
+
+## Example conversation
+
+Once configured, you can drive everything in natural language:
+
+```
+You: List all my workspaces
+AI:  Shows all FME workspaces with IDs
+
+You: Search for flags containing 'dark-mode' in workspace ws_abc123
+AI:  Returns matching flags
+
+You: What are the targeting rules for 'checkout-redesign' in production?
+AI:  Shows treatments, targeting rules, and percentage splits
+
+You: Kill the 'new-payments-flow' flag in production
+AI:  Requires confirm=true, then disables the flag
+
+You: Restore 'new-payments-flow' in production
+AI:  Re-enables the flag and resumes normal traffic routing
+```

@@ -1,0 +1,192 @@
+---
+title: Feature flag tools
+description: List, inspect, create, update, kill, restore, archive, and delete feature flags and their per-environment definitions.
+---
+
+Feature flags (called _splits_ in the underlying API) are the core of FME. A flag
+has **workspace-level metadata** (name, description, tags, owners, rollout status)
+and, separately, a **per-environment definition** (treatments and targeting
+rules). The tools below mirror that split: some operate on the flag itself, others
+on its definition in a given environment.
+
+> All tools take a `workspace_id`. Discover IDs with the
+> [workspace & environment tools](/projects/mcp-harness-fme/docs/tools-workspaces-environments).
+
+## Flag metadata
+
+### `list_feature_flags`
+
+List feature flags in a workspace.
+
+| Argument            | Type   | Default | Description                                                 |
+| ------------------- | ------ | ------- | ----------------------------------------------------------- |
+| `workspace_id`      | string | —       | The workspace ID                                            |
+| `limit`             | number | `20`    | Number of results to return (max 50)                        |
+| `offset`            | number | `0`     | Pagination offset                                           |
+| `tag`               | string | —       | Filter flags by tag (e.g. `Mobile Suite`)                   |
+| `rollout_status_id` | string | —       | Filter by rollout status UUID (see `list_rollout_statuses`) |
+| `name`              | string | —       | Filter flags by name (partial match)                        |
+
+### `get_feature_flag`
+
+Get metadata for a specific feature flag.
+
+| Argument       | Type   | Description           |
+| -------------- | ------ | --------------------- |
+| `workspace_id` | string | The workspace ID      |
+| `flag_name`    | string | The feature flag name |
+
+### `create_feature_flag`
+
+Create a new feature flag for a given traffic type.
+
+| Argument       | Type   | Description                               |
+| -------------- | ------ | ----------------------------------------- |
+| `workspace_id` | string | The workspace ID                          |
+| `traffic_type` | string | The traffic type ID or name (e.g. `user`) |
+| `name`         | string | The flag name (unique per workspace)      |
+| `description`  | string | Optional description                      |
+
+### `update_feature_flag`
+
+Partial update of a flag's description, tags, owners, or rollout status (sent as a
+JSON Patch). Provide at least one field.
+
+| Argument            | Type   | Description                                               |
+| ------------------- | ------ | --------------------------------------------------------- |
+| `workspace_id`      | string | The workspace ID                                          |
+| `flag_name`         | string | The feature flag name                                     |
+| `description`       | string | New description                                           |
+| `tags`              | array  | Tags to set — `{ name: string }` objects or plain strings |
+| `owners`            | array  | Owners to set — `{ id, type }` objects                    |
+| `rollout_status_id` | string | Rollout status UUID (see `list_rollout_statuses`)         |
+
+### `delete_feature_flag`
+
+Permanently delete a feature flag from a workspace. **Irreversible.**
+
+| Argument       | Type    | Default | Description               |
+| -------------- | ------- | ------- | ------------------------- |
+| `workspace_id` | string  | —       | The workspace ID          |
+| `flag_name`    | string  | —       | The feature flag name     |
+| `confirm`      | boolean | `false` | Must be `true` to execute |
+
+### `archive_feature_flag`
+
+Archive a flag — removes it from active use while preserving history. Subject to
+OPA policy checks (returns 409 on failure).
+
+| Argument       | Type    | Default | Description               |
+| -------------- | ------- | ------- | ------------------------- |
+| `workspace_id` | string  | —       | The workspace ID          |
+| `flag_name`    | string  | —       | The feature flag name     |
+| `confirm`      | boolean | `false` | Must be `true` to execute |
+
+### `unarchive_feature_flag`
+
+Unarchive a previously archived flag, restoring it to active use.
+
+| Argument       | Type   | Description           |
+| -------------- | ------ | --------------------- |
+| `workspace_id` | string | The workspace ID      |
+| `flag_name`    | string | The feature flag name |
+
+## Kill switch
+
+### `kill_feature_flag`
+
+Kill (disable) a flag in an environment — forces all traffic to the default
+treatment. This is the fast, reversible emergency switch.
+
+| Argument         | Type    | Default | Description                |
+| ---------------- | ------- | ------- | -------------------------- |
+| `workspace_id`   | string  | —       | The workspace ID           |
+| `environment_id` | string  | —       | The environment ID or name |
+| `flag_name`      | string  | —       | The feature flag name      |
+| `confirm`        | boolean | `false` | Must be `true` to execute  |
+
+### `restore_feature_flag`
+
+Restore (re-enable) a killed flag in an environment, resuming normal traffic
+routing.
+
+| Argument         | Type   | Description                |
+| ---------------- | ------ | -------------------------- |
+| `workspace_id`   | string | The workspace ID           |
+| `environment_id` | string | The environment ID or name |
+| `flag_name`      | string | The feature flag name      |
+
+## Flag definitions (per environment)
+
+A flag definition holds the treatments and targeting rules for a flag **in one
+environment**. The flag can exist without a definition in a given environment.
+
+### `list_flag_definitions`
+
+List all flag definitions (targeting rules) in a specific environment.
+
+| Argument         | Type   | Default | Description                          |
+| ---------------- | ------ | ------- | ------------------------------------ |
+| `workspace_id`   | string | —       | The workspace ID                     |
+| `environment_id` | string | —       | The environment ID or name           |
+| `limit`          | number | `20`    | Number of results to return (max 50) |
+| `offset`         | number | `0`     | Pagination offset                    |
+
+### `get_flag_definition`
+
+Get the targeting rules and treatment definition of a flag in a specific
+environment.
+
+| Argument         | Type   | Description                |
+| ---------------- | ------ | -------------------------- |
+| `workspace_id`   | string | The workspace ID           |
+| `environment_id` | string | The environment ID or name |
+| `flag_name`      | string | The feature flag name      |
+
+### `create_flag_definition`
+
+Create (activate) a flag definition in an environment with treatments and
+targeting rules.
+
+| Argument         | Type   | Description                                                                    |
+| ---------------- | ------ | ------------------------------------------------------------------------------ |
+| `workspace_id`   | string | The workspace ID                                                               |
+| `environment_id` | string | The environment ID or name                                                     |
+| `flag_name`      | string | The feature flag name                                                          |
+| `definition`     | string | Full definition as a JSON string — must include `treatments` and `defaultRule` |
+
+### `update_flag_definition`
+
+Fully replace a flag definition (treatments, targeting rules) in an environment.
+
+| Argument         | Type   | Description                                                              |
+| ---------------- | ------ | ------------------------------------------------------------------------ |
+| `workspace_id`   | string | The workspace ID                                                         |
+| `environment_id` | string | The environment ID or name                                               |
+| `flag_name`      | string | The feature flag name                                                    |
+| `definition`     | string | Complete updated definition as a JSON string — replaces the existing one |
+
+### `delete_flag_definition`
+
+Remove a flag definition from an environment. The flag itself remains, but loses
+its targeting rules in that environment.
+
+| Argument         | Type    | Default | Description                |
+| ---------------- | ------- | ------- | -------------------------- |
+| `workspace_id`   | string  | —       | The workspace ID           |
+| `environment_id` | string  | —       | The environment ID or name |
+| `flag_name`      | string  | —       | The feature flag name      |
+| `confirm`        | boolean | `false` | Must be `true` to execute  |
+
+## Rollout statuses
+
+### `list_rollout_statuses`
+
+List rollout status definitions for a workspace (e.g. _Killed_, _Permanent_,
+_Ramping_, _Pre-Production_). Use the returned UUIDs to filter flags via
+`list_feature_flags`'s `rollout_status_id` argument or to set one with
+`update_feature_flag`.
+
+| Argument       | Type   | Description      |
+| -------------- | ------ | ---------------- |
+| `workspace_id` | string | The workspace ID |

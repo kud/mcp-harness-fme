@@ -1,0 +1,10 @@
+{
+  "title": "mcp-harness-fme",
+  "pages": [
+    "index",
+    "tools-flags",
+    "tools-segments",
+    "tools-workspaces-environments",
+    "troubleshooting"
+  ]
+}
