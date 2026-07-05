@@ -302,8 +302,11 @@ export const listFlagDefinitions = async ({
     size: String(limit),
     offset: String(offset),
   })
+  // Split.io serves feature flag *definitions* from the /splits path (not a
+  // /splitDefinitions resource): GET /splits/ws/{ws}/environments/{env}
+  // https://docs.split.io/reference/list-feature-flag-definitions-in-environment
   const result = await apiFetch<{ objects: unknown[]; totalCount: number }>(
-    `/splitDefinitions/ws/${workspace_id}/environments/${environment_id}?${query}`,
+    `/splits/ws/${workspace_id}/environments/${environment_id}?${query}`,
   )
   return result.ok
     ? ok(result.data)
@@ -1171,7 +1174,12 @@ const main = async () => {
   console.error("mcp-harness-fme running")
 }
 
-main().catch((e) => {
-  console.error("Fatal:", e)
-  process.exit(1)
-})
+// Tests import this module to exercise the tool handlers against a mocked
+// fetch; starting the stdio server (and its missing-key exit) during import
+// would abort the test runner. The real CLI still starts normally.
+if (process.env.VITEST !== "true") {
+  main().catch((e) => {
+    console.error("Fatal:", e)
+    process.exit(1)
+  })
+}

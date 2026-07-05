@@ -330,7 +330,7 @@ describe("listFlagDefinitions", () => {
     })
     expect(result.content[0].text).toContain("my-flag")
     expect(mockFetch).toHaveBeenCalledWith(
-      expect.stringContaining("/splits/ws/ws1/environments/production/splits"),
+      expect.stringContaining("/splits/ws/ws1/environments/production"),
       expect.any(Object),
     )
   })
