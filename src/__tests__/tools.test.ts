@@ -141,42 +141,130 @@ describe("getFlagDefinition", () => {
 })
 
 describe("getFlagUrl", () => {
+  beforeEach(() => {
+    vi.stubEnv("MCP_HARNESS_FME_ACCOUNT_ID", "acc-123")
+    vi.stubEnv("MCP_HARNESS_FME_ORG_GUID", "org-guid-xyz")
+  })
+
   afterEach(() => {
     vi.unstubAllEnvs()
   })
 
-  it("assembles the deep-link URL when both env vars are set", async () => {
-    vi.stubEnv("MCP_HARNESS_FME_ACCOUNT_ID", "acc-123")
-    vi.stubEnv("MCP_HARNESS_FME_ORG_GUID", "org-guid-xyz")
+  it("resolves workspace, flag, and environment by name and assembles the URL", async () => {
+    mockFetch
+      .mockReturnValueOnce(
+        jsonResponse({
+          objects: [
+            {
+              id: "ws-id-1",
+              name: "Default",
+              organizationIdentifier: "MyOrg",
+              projectIdentifier: "Default",
+            },
+          ],
+        }),
+      )
+      .mockReturnValueOnce(jsonResponse({ id: "flag-guid-1" }))
+      .mockReturnValueOnce(
+        jsonResponse([{ id: "env-guid-1", name: "Prod" }]),
+      )
+
     const result = await api.getFlagUrl({
-      workspace_id: "ws1",
-      environment_id: "env1",
-      flag_id: "flag-9",
-      org_slug: "MyOrg",
-      project: "Default",
+      workspace: "Default",
+      flag: "my_flag",
+      environment: "Prod",
     })
     const text = result.content[0].text
     expect(text).toContain("account/acc-123")
     expect(text).toContain("org/org-guid-xyz")
-    expect(text).toContain("ws/ws1")
-    expect(text).toContain("splits/flag-9")
-    expect(text).toContain("env/env1")
     expect(text).toContain("orgs/MyOrg")
-    expect(mockFetch).not.toHaveBeenCalled()
+    expect(text).toContain("projects/Default")
+    expect(text).toContain("ws/ws-id-1")
+    expect(text).toContain("splits/flag-guid-1")
+    expect(text).toContain("env/env-guid-1")
+    expect(mockFetch).toHaveBeenCalledTimes(3)
+  })
+
+  it("skips flag and environment lookups when both are passed as GUIDs", async () => {
+    const flagGuid = "11111111-1111-1111-1111-111111111111"
+    const envGuid = "22222222-2222-2222-2222-222222222222"
+    mockFetch.mockReturnValueOnce(
+      jsonResponse({
+        objects: [
+          {
+            id: "ws-id-1",
+            name: "Default",
+            organizationIdentifier: "MyOrg",
+            projectIdentifier: "Default",
+          },
+        ],
+      }),
+    )
+
+    const result = await api.getFlagUrl({
+      workspace: "ws-id-1",
+      flag: flagGuid,
+      environment: envGuid,
+    })
+    const text = result.content[0].text
+    expect(text).toContain(`splits/${flagGuid}`)
+    expect(text).toContain(`env/${envGuid}`)
+    expect(mockFetch).toHaveBeenCalledTimes(1)
   })
 
   it("returns an error mentioning MCP_HARNESS_FME_ACCOUNT_ID when env vars are unset", async () => {
     vi.stubEnv("MCP_HARNESS_FME_ACCOUNT_ID", "")
-    vi.stubEnv("MCP_HARNESS_FME_ORG_GUID", "")
     const result = await api.getFlagUrl({
-      workspace_id: "ws1",
-      environment_id: "env1",
-      flag_id: "flag-9",
-      org_slug: "MyOrg",
-      project: "Default",
+      workspace: "Default",
+      flag: "my_flag",
+      environment: "Prod",
     })
     expect(result.content[0].text).toContain("MCP_HARNESS_FME_ACCOUNT_ID")
     expect(mockFetch).not.toHaveBeenCalled()
+  })
+
+  it("returns 'workspace not found' when no workspace matches", async () => {
+    mockFetch.mockReturnValueOnce(
+      jsonResponse({
+        objects: [{ id: "ws-id-1", name: "Default" }],
+      }),
+    )
+    const result = await api.getFlagUrl({
+      workspace: "Nonexistent",
+      flag: "my_flag",
+      environment: "Prod",
+    })
+    expect(result.content[0].text).toContain("workspace not found")
+    expect(mockFetch).toHaveBeenCalledTimes(1)
+  })
+
+  it("returns 'environment not found' with available names when the environment name doesn't match", async () => {
+    mockFetch
+      .mockReturnValueOnce(
+        jsonResponse({
+          objects: [
+            {
+              id: "ws-id-1",
+              name: "Default",
+              organizationIdentifier: "MyOrg",
+              projectIdentifier: "Default",
+            },
+          ],
+        }),
+      )
+      .mockReturnValueOnce(jsonResponse({ id: "flag-guid-1" }))
+      .mockReturnValueOnce(
+        jsonResponse([{ id: "env-guid-1", name: "Prod" }]),
+      )
+
+    const result = await api.getFlagUrl({
+      workspace: "Default",
+      flag: "my_flag",
+      environment: "Staging",
+    })
+    const text = result.content[0].text
+    expect(text).toContain("environment not found")
+    expect(text).toContain("Prod")
   })
 })
 
