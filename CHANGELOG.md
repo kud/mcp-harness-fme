@@ -4,6 +4,14 @@ All notable changes to this project are documented here.
 
 ---
 
+## [1.5.2] — 2026-07-07
+
+### Documentation
+
+- Show the two optional `get_flag_url` env vars (`MCP_HARNESS_FME_ACCOUNT_ID`, `MCP_HARNESS_FME_ORG_GUID`) in the README Usage config examples, as a separate snippet so the minimal starter config stays clean and copy-pasting it can't set junk values.
+
+---
+
 ## [1.5.1] — 2026-07-07
 
 ### Documentation

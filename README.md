@@ -56,6 +56,18 @@ claude mcp add --transport stdio --scope user harness-fme \
   -- npx --yes @kud/mcp-harness-fme@latest
 ```
 
+To enable the `get_flag_url` deep-link tool, also set two optional keys — add them to the `env` block above (or as extra `--env` flags for the CLI). See [Configuration](#configuration) for where to find their values.
+
+```json
+"env": {
+  "MCP_HARNESS_FME_API_KEY": "your_api_key",
+  "MCP_HARNESS_FME_ACCOUNT_ID": "your_account_id",
+  "MCP_HARNESS_FME_ORG_GUID": "your_org_guid"
+}
+```
+
+Leave them out and every other tool still works — `get_flag_url` just reports what's missing.
+
 ### Available tools
 
 | Tool                                       | Description                                                                                                                                                                   |
