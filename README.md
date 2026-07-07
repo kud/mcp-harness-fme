@@ -32,7 +32,7 @@ Set the environment variable `MCP_HARNESS_FME_API_KEY` to your Harness FME API k
 
 ## Usage
 
-### Claude Desktop / Claude Code
+This is a standard stdio MCP server — it works with any MCP client (Claude Desktop, Claude Code, Cursor, Windsurf, Cline, Zed, …). Add it to your client's MCP config:
 
 ```json
 {
@@ -48,7 +48,7 @@ Set the environment variable `MCP_HARNESS_FME_API_KEY` to your Harness FME API k
 }
 ```
 
-For Claude Code, add via the CLI:
+Most clients read this `mcpServers` shape — Claude Desktop's config file, Cursor's `.cursor/mcp.json`, Windsurf, Cline, and so on. For **Claude Code**, there's a CLI shortcut:
 
 ```sh
 claude mcp add --transport stdio --scope user harness-fme \

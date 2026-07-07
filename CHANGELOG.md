@@ -4,6 +4,14 @@ All notable changes to this project are documented here.
 
 ---
 
+## [1.5.1] — 2026-07-07
+
+### Documentation
+
+- Reframe the README Usage section as client-agnostic — the server is a standard stdio MCP server that works with any MCP client (Claude Desktop, Claude Code, Cursor, Windsurf, Cline, Zed, …), with the `claude mcp add` CLI kept as a labelled Claude Code shortcut. Repo description updated to match.
+
+---
+
 ## [1.5.0] — 2026-07-07
 
 ### Changed
