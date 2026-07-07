@@ -4,6 +4,14 @@ All notable changes to this project are documented here.
 
 ---
 
+## [1.4.1] — 2026-07-07
+
+### Changed
+
+- Rename the `get_flag_url` env vars to `MCP_HARNESS_FME_ACCOUNT_ID` and `MCP_HARNESS_FME_ORG_GUID` for consistency with `MCP_HARNESS_FME_API_KEY` — one predictable namespace for all server config, and no collision with generic `HARNESS_*` vars from other tooling.
+
+---
+
 ## [1.4.0] — 2026-07-07
 
 ### Features
