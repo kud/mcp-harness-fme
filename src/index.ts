@@ -160,6 +160,39 @@ export const getFlagDefinition = async ({
     : err(`failed to fetch flag definition: ${flag_name} (${result.message})`)
 }
 
+// Assemble a Harness FME web-UI deep-link. The account ID and org GUID the URL
+// needs are Harness *platform* identifiers, not exposed by the Split API this
+// server wraps — so they're read from env (set once per deployment) rather than
+// fetched or hardcoded. Read at call time so the server needn't restart to pick
+// them up and tests can vary them per case.
+export const getFlagUrl = async ({
+  workspace_id,
+  environment_id,
+  flag_id,
+  org_slug,
+  project,
+}: {
+  workspace_id: string
+  environment_id: string
+  flag_id: string
+  org_slug: string
+  project: string
+}) => {
+  const accountId = process.env.HARNESS_ACCOUNT_ID
+  const orgGuid = process.env.HARNESS_ORG_GUID
+  if (!accountId || !orgGuid)
+    return err(
+      "get_flag_url needs HARNESS_ACCOUNT_ID and HARNESS_ORG_GUID set on the server. " +
+        "These are the account ID and org GUID from a Harness FME flag URL in your browser " +
+        "(app.harness.io/ng/account/<HARNESS_ACCOUNT_ID>/… and …/org/<HARNESS_ORG_GUID>/…) — copy them once.",
+    )
+  const url =
+    `https://app.harness.io/ng/account/${accountId}/all/fme/orgs/${org_slug}` +
+    `/projects/${project}/org/${orgGuid}/ws/${workspace_id}/splits/${flag_id}` +
+    `/env/${environment_id}/definition`
+  return ok({ url })
+}
+
 export const killFeatureFlag = async ({
   workspace_id,
   environment_id,
@@ -287,16 +320,28 @@ export const deleteFeatureFlag = async ({
   return ok({ deleted: flag_name })
 }
 
+// Trim a flag definition to just its identifying fields. Full definitions
+// carry every treatment/rule body, so an environment with 100+ flags can blow
+// past a host's per-result token cap — summary mode is for callers that only
+// need to locate a flag by name/id. undefined keys drop out of JSON.stringify.
+const summariseFlagDefinition = (o: unknown) => {
+  if (!o || typeof o !== "object") return o
+  const { name, id } = o as Record<string, unknown>
+  return { name, id }
+}
+
 export const listFlagDefinitions = async ({
   workspace_id,
   environment_id,
   limit,
   offset,
+  summary,
 }: {
   workspace_id: string
   environment_id: string
   limit: number
   offset: number
+  summary?: boolean
 }) => {
   const query = new URLSearchParams({
     size: String(limit),
@@ -308,9 +353,15 @@ export const listFlagDefinitions = async ({
   const result = await apiFetch<{ objects: unknown[]; totalCount: number }>(
     `/splits/ws/${workspace_id}/environments/${environment_id}?${query}`,
   )
-  return result.ok
-    ? ok(result.data)
-    : err(`failed to fetch flag definitions (${result.message})`)
+  if (!result.ok)
+    return err(`failed to fetch flag definitions (${result.message})`)
+  const data = summary
+    ? {
+        ...result.data,
+        objects: result.data.objects.map(summariseFlagDefinition),
+      }
+    : result.data
+  return ok(data)
 }
 
 const parseDefinition = (definition: string) => {
@@ -399,6 +450,66 @@ export const updateFlagDefinition = async ({
     ? ok(result.data)
     : err(
         `failed to update flag definition for: ${flag_name} (${result.message})`,
+      )
+}
+
+// Add a segment to a named treatment via read-modify-write, instead of a full
+// definition replace where a dropped field silently wipes existing targeting.
+// treatments[].segments is a plain string array of segment names. Idempotent:
+// if the segment is already present, it returns unchanged without writing.
+export const addSegmentToTreatment = async ({
+  workspace_id,
+  environment_id,
+  flag_name,
+  treatment,
+  segment,
+  title,
+  comment,
+}: {
+  workspace_id: string
+  environment_id: string
+  flag_name: string
+  treatment: string
+  segment: string
+  title?: string
+  comment?: string
+}) => {
+  const current = await apiFetch<Record<string, unknown>>(
+    `/splits/ws/${workspace_id}/${flag_name}/environments/${environment_id}`,
+  )
+  if (!current.ok)
+    return err(
+      `failed to fetch flag definition: ${flag_name} (${current.message})`,
+    )
+  const def = current.data
+  const treatments = def.treatments as
+    | { name: string; segments?: string[] }[]
+    | undefined
+  const target = treatments?.find((t) => t.name === treatment)
+  if (!target)
+    return err(
+      `treatment "${treatment}" not found on ${flag_name}. Available: ${
+        treatments?.map((t) => t.name).join(", ") || "none"
+      }`,
+    )
+  const segments = target.segments ?? []
+  if (segments.includes(segment))
+    return ok({
+      unchanged: true,
+      message: `segment "${segment}" already on treatment "${treatment}"`,
+    })
+  target.segments = [...segments, segment]
+
+  const merged = withTitleComment(def, title, comment)
+  if ("error" in merged) return err(merged.error)
+  const result = await apiFetch<unknown>(
+    `/splits/ws/${workspace_id}/${flag_name}/environments/${environment_id}`,
+    { method: "PUT", body: JSON.stringify(merged.body) },
+  )
+  return result.ok
+    ? ok(result.data)
+    : err(
+        `failed to add segment to treatment on ${flag_name} (${result.message})`,
       )
 }
 
@@ -903,7 +1014,7 @@ server.registerTool(
   "list_flag_definitions",
   {
     description:
-      "List all feature flag definitions (targeting rules) in a specific environment",
+      "List all feature flag definitions (targeting rules) in a specific environment. Full definitions are large; pass summary: true to get name/id only when you just need to locate a flag.",
     inputSchema: {
       workspace_id: z.string().describe("The workspace ID"),
       environment_id: z.string().describe("The environment ID or name"),
@@ -913,9 +1024,72 @@ server.registerTool(
         .default(20)
         .describe("Number of results to return (max 50)"),
       offset: z.number().optional().default(0).describe("Pagination offset"),
+      summary: z
+        .boolean()
+        .optional()
+        .default(false)
+        .describe(
+          "Return only name and id per flag instead of full treatment/rule bodies — avoids oversized responses in environments with many flags",
+        ),
     },
   },
   listFlagDefinitions,
+)
+
+server.registerTool(
+  "get_flag_url",
+  {
+    description:
+      "Build a deep-link to a feature flag's definition in the Harness FME web UI. Requires HARNESS_ACCOUNT_ID and HARNESS_ORG_GUID env vars on the server — those IDs are not exposed by the API, so copy them once from a flag URL in the browser. flag_id comes from get_feature_flag (.id); org_slug (organizationIdentifier) and project (projectIdentifier) come from list_workspaces.",
+    inputSchema: {
+      workspace_id: z.string().describe("The workspace ID"),
+      environment_id: z.string().describe("The environment ID"),
+      flag_id: z
+        .string()
+        .describe("The feature flag's GUID (from get_feature_flag .id)"),
+      org_slug: z
+        .string()
+        .describe(
+          "Organization identifier (organizationIdentifier from list_workspaces)",
+        ),
+      project: z
+        .string()
+        .describe(
+          "Project identifier (projectIdentifier from list_workspaces)",
+        ),
+    },
+  },
+  getFlagUrl,
+)
+
+server.registerTool(
+  "add_segment_to_treatment",
+  {
+    description:
+      "Add a segment to a specific treatment of a feature flag via read-modify-write — safer than update_flag_definition's full replace, where a dropped field silently removes existing targeting. Idempotent: a no-op if the segment is already on the treatment. For workspaces where list_workspaces reports requiresTitleAndComments: true, pass title (and comment).",
+    inputSchema: {
+      workspace_id: z.string().describe("The workspace ID"),
+      environment_id: z.string().describe("The environment ID or name"),
+      flag_name: z.string().describe("The feature flag name"),
+      treatment: z
+        .string()
+        .describe("The treatment name to add the segment to (e.g. 'on')"),
+      segment: z.string().describe("The segment name to add"),
+      title: z
+        .string()
+        .optional()
+        .describe(
+          "Change title. Required for workspaces with requiresTitleAndComments: true",
+        ),
+      comment: z
+        .string()
+        .optional()
+        .describe(
+          "Change comment. Required for workspaces with requiresTitleAndComments: true",
+        ),
+    },
+  },
+  addSegmentToTreatment,
 )
 
 server.registerTool(
@@ -1008,7 +1182,9 @@ server.registerTool(
         .number()
         .optional()
         .default(20)
-        .describe("Number of results to return"),
+        .describe(
+          "Requested page size. Note: the Harness FME API caps segment pages at 20 — higher values are ignored and at most 20 objects are returned per call. Use offset to page through the rest.",
+        ),
       offset: z.number().optional().default(0).describe("Pagination offset"),
     },
   },

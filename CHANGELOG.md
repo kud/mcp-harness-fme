@@ -4,6 +4,20 @@ All notable changes to this project are documented here.
 
 ---
 
+## [1.4.0] — 2026-07-07
+
+### Features
+
+- Add `add_segment_to_treatment` — adds a segment to a flag treatment via read-modify-write instead of a full-replace, so a dropped field can't silently wipe existing targeting. Idempotent: a no-op if the segment is already present.
+- Add `get_flag_url` — builds a Harness FME web-UI deep-link for a flag from the `HARNESS_ACCOUNT_ID` and `HARNESS_ORG_GUID` env vars (those IDs are not exposed by the API), plus the workspace/env/flag IDs.
+- Add a `summary` option to `list_flag_definitions` that returns only name/id per flag, avoiding oversized responses in environments with many flags.
+
+### Documentation
+
+- Clarify in `list_segments` that the Harness FME API caps segment pages at 20 regardless of the requested `limit`.
+
+---
+
 ## [1.3.0] — 2026-07-07
 
 ### Features

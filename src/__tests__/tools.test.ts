@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from "vitest"
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 import * as api from "../index.js"
 
 const mockFetch = vi.fn()
@@ -137,6 +137,46 @@ describe("getFlagDefinition", () => {
       flag_name: "my-flag",
     })
     expect(result.content[0].text).toContain("Error:")
+  })
+})
+
+describe("getFlagUrl", () => {
+  afterEach(() => {
+    vi.unstubAllEnvs()
+  })
+
+  it("assembles the deep-link URL when both env vars are set", async () => {
+    vi.stubEnv("HARNESS_ACCOUNT_ID", "acc-123")
+    vi.stubEnv("HARNESS_ORG_GUID", "org-guid-xyz")
+    const result = await api.getFlagUrl({
+      workspace_id: "ws1",
+      environment_id: "env1",
+      flag_id: "flag-9",
+      org_slug: "MyOrg",
+      project: "Default",
+    })
+    const text = result.content[0].text
+    expect(text).toContain("account/acc-123")
+    expect(text).toContain("org/org-guid-xyz")
+    expect(text).toContain("ws/ws1")
+    expect(text).toContain("splits/flag-9")
+    expect(text).toContain("env/env1")
+    expect(text).toContain("orgs/MyOrg")
+    expect(mockFetch).not.toHaveBeenCalled()
+  })
+
+  it("returns an error mentioning HARNESS_ACCOUNT_ID when env vars are unset", async () => {
+    vi.stubEnv("HARNESS_ACCOUNT_ID", "")
+    vi.stubEnv("HARNESS_ORG_GUID", "")
+    const result = await api.getFlagUrl({
+      workspace_id: "ws1",
+      environment_id: "env1",
+      flag_id: "flag-9",
+      org_slug: "MyOrg",
+      project: "Default",
+    })
+    expect(result.content[0].text).toContain("HARNESS_ACCOUNT_ID")
+    expect(mockFetch).not.toHaveBeenCalled()
   })
 })
 
@@ -344,6 +384,58 @@ describe("listFlagDefinitions", () => {
       offset: 0,
     })
     expect(result.content[0].text).toContain("Error:")
+  })
+
+  it("strips deep fields down to name/id when summary is true", async () => {
+    mockFetch.mockReturnValue(
+      jsonResponse({
+        objects: [
+          {
+            name: "f1",
+            id: "1",
+            treatments: [{ name: "on" }, { name: "off" }],
+            rules: [{ condition: "always" }],
+          },
+        ],
+        totalCount: 1,
+      }),
+    )
+    const result = await api.listFlagDefinitions({
+      workspace_id: "ws1",
+      environment_id: "production",
+      limit: 20,
+      offset: 0,
+      summary: true,
+    })
+    expect(result.content[0].text).toContain("f1")
+    expect(result.content[0].text).not.toContain("treatments")
+    expect(mockFetch).toHaveBeenCalledWith(
+      expect.stringContaining("/splits/ws/ws1/environments/production"),
+      expect.any(Object),
+    )
+  })
+
+  it("returns the full definitions unchanged when summary is omitted", async () => {
+    const objects = [
+      {
+        name: "f1",
+        id: "1",
+        treatments: [{ name: "on" }, { name: "off" }],
+        rules: [{ condition: "always" }],
+      },
+    ]
+    mockFetch.mockReturnValue(jsonResponse({ objects, totalCount: 1 }))
+    const result = await api.listFlagDefinitions({
+      workspace_id: "ws1",
+      environment_id: "production",
+      limit: 20,
+      offset: 0,
+    })
+    expect(result.content[0].text).toContain("treatments")
+    expect(JSON.parse(result.content[0].text)).toEqual({
+      objects,
+      totalCount: 1,
+    })
   })
 })
 
@@ -580,6 +672,97 @@ describe("deleteFlagDefinition", () => {
     })
     expect(result.content[0].text).toContain("Error:")
     expect(result.content[0].text).toContain("403")
+  })
+})
+
+describe("addSegmentToTreatment", () => {
+  it("appends the segment to the treatment and keeps existing segments", async () => {
+    mockFetch
+      .mockReturnValueOnce(
+        jsonResponse({
+          name: "my-flag",
+          treatments: [{ name: "on", segments: ["Seg_A"] }, { name: "off" }],
+        }),
+      )
+      .mockReturnValueOnce(jsonResponse({ name: "my-flag" }))
+
+    const result = await api.addSegmentToTreatment({
+      workspace_id: "ws1",
+      environment_id: "production",
+      flag_name: "my-flag",
+      treatment: "on",
+      segment: "Seg_B",
+    })
+
+    expect(mockFetch).toHaveBeenCalledTimes(2)
+    const [, putOptions] = mockFetch.mock.calls[1]
+    expect(putOptions).toMatchObject({ method: "PUT" })
+    expect(putOptions.body as string).toContain("Seg_A")
+    expect(putOptions.body as string).toContain("Seg_B")
+    expect(result.content[0].text).toContain("my-flag")
+  })
+
+  it("returns unchanged and skips the write when the segment is already present", async () => {
+    mockFetch.mockReturnValueOnce(
+      jsonResponse({
+        name: "my-flag",
+        treatments: [{ name: "on", segments: ["Seg_B"] }, { name: "off" }],
+      }),
+    )
+
+    const result = await api.addSegmentToTreatment({
+      workspace_id: "ws1",
+      environment_id: "production",
+      flag_name: "my-flag",
+      treatment: "on",
+      segment: "Seg_B",
+    })
+
+    expect(result.content[0].text).toContain("unchanged")
+    expect(mockFetch).toHaveBeenCalledTimes(1)
+  })
+
+  it("returns an error naming the treatment when it is not found", async () => {
+    mockFetch.mockReturnValueOnce(
+      jsonResponse({ name: "my-flag", treatments: [{ name: "off" }] }),
+    )
+
+    const result = await api.addSegmentToTreatment({
+      workspace_id: "ws1",
+      environment_id: "production",
+      flag_name: "my-flag",
+      treatment: "on",
+      segment: "Seg_B",
+    })
+
+    expect(result.content[0].text).toContain("Error:")
+    expect(result.content[0].text).toContain('"on"')
+    expect(mockFetch).toHaveBeenCalledTimes(1)
+  })
+
+  it("merges title and comment into the PUT body on success", async () => {
+    mockFetch
+      .mockReturnValueOnce(
+        jsonResponse({
+          name: "my-flag",
+          treatments: [{ name: "on", segments: ["Seg_A"] }, { name: "off" }],
+        }),
+      )
+      .mockReturnValueOnce(jsonResponse({ name: "my-flag" }))
+
+    await api.addSegmentToTreatment({
+      workspace_id: "ws1",
+      environment_id: "production",
+      flag_name: "my-flag",
+      treatment: "on",
+      segment: "Seg_B",
+      title: "my title",
+      comment: "my comment",
+    })
+
+    const [, putOptions] = mockFetch.mock.calls[1]
+    expect(putOptions.body as string).toContain('"title"')
+    expect(putOptions.body as string).toContain('"comment"')
   })
 })
 
