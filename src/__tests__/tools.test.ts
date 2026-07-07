@@ -389,6 +389,59 @@ describe("createFlagDefinition", () => {
     })
     expect(result.content[0].text).toContain("Error:")
   })
+
+  it("merges title and comment into the request body", async () => {
+    mockFetch.mockReturnValue(jsonResponse({ name: "my-flag" }))
+    await api.createFlagDefinition({
+      workspace_id: "ws1",
+      environment_id: "production",
+      flag_name: "my-flag",
+      definition: validDefinition,
+      title: "my title",
+      comment: "my comment",
+    })
+    expect(mockFetch).toHaveBeenCalledWith(
+      expect.any(String),
+      expect.objectContaining({ body: expect.stringContaining('"title"') }),
+    )
+    expect(mockFetch).toHaveBeenCalledWith(
+      expect.any(String),
+      expect.objectContaining({ body: expect.stringContaining('"comment"') }),
+    )
+    const [, options] = mockFetch.mock.calls[0]
+    const body = JSON.parse(options.body as string)
+    expect(body).toEqual({
+      treatments: [{ name: "on" }, { name: "off" }],
+      defaultRule: [{ treatment: "off", size: 100 }],
+      title: "my title",
+      comment: "my comment",
+    })
+  })
+
+  it("omits title/comment from the body when not provided", async () => {
+    mockFetch.mockReturnValue(jsonResponse({ name: "my-flag" }))
+    await api.createFlagDefinition({
+      workspace_id: "ws1",
+      environment_id: "production",
+      flag_name: "my-flag",
+      definition: validDefinition,
+    })
+    const [, options] = mockFetch.mock.calls[0]
+    expect(options.body as string).not.toContain('"title"')
+    expect(options.body as string).not.toContain('"comment"')
+  })
+
+  it("returns error when definition is a JSON array and title/comment are given", async () => {
+    const result = await api.createFlagDefinition({
+      workspace_id: "ws1",
+      environment_id: "production",
+      flag_name: "my-flag",
+      definition: JSON.stringify([1, 2, 3]),
+      title: "my title",
+    })
+    expect(result.content[0].text).toContain("must be a JSON object")
+    expect(mockFetch).not.toHaveBeenCalled()
+  })
 })
 
 describe("updateFlagDefinition", () => {
@@ -432,6 +485,59 @@ describe("updateFlagDefinition", () => {
       definition: validDefinition,
     })
     expect(result.content[0].text).toContain("Error:")
+  })
+
+  it("merges title and comment into the request body", async () => {
+    mockFetch.mockReturnValue(jsonResponse({ name: "my-flag" }))
+    await api.updateFlagDefinition({
+      workspace_id: "ws1",
+      environment_id: "production",
+      flag_name: "my-flag",
+      definition: validDefinition,
+      title: "my title",
+      comment: "my comment",
+    })
+    expect(mockFetch).toHaveBeenCalledWith(
+      expect.any(String),
+      expect.objectContaining({ body: expect.stringContaining('"title"') }),
+    )
+    expect(mockFetch).toHaveBeenCalledWith(
+      expect.any(String),
+      expect.objectContaining({ body: expect.stringContaining('"comment"') }),
+    )
+    const [, options] = mockFetch.mock.calls[0]
+    const body = JSON.parse(options.body as string)
+    expect(body).toEqual({
+      treatments: [{ name: "on" }, { name: "off" }],
+      defaultRule: [{ treatment: "on", size: 100 }],
+      title: "my title",
+      comment: "my comment",
+    })
+  })
+
+  it("omits title/comment from the body when not provided", async () => {
+    mockFetch.mockReturnValue(jsonResponse({ name: "my-flag" }))
+    await api.updateFlagDefinition({
+      workspace_id: "ws1",
+      environment_id: "production",
+      flag_name: "my-flag",
+      definition: validDefinition,
+    })
+    const [, options] = mockFetch.mock.calls[0]
+    expect(options.body as string).not.toContain('"title"')
+    expect(options.body as string).not.toContain('"comment"')
+  })
+
+  it("returns error when definition is a JSON array and title/comment are given", async () => {
+    const result = await api.updateFlagDefinition({
+      workspace_id: "ws1",
+      environment_id: "production",
+      flag_name: "my-flag",
+      definition: JSON.stringify([1, 2, 3]),
+      comment: "my comment",
+    })
+    expect(result.content[0].text).toContain("must be a JSON object")
+    expect(mockFetch).not.toHaveBeenCalled()
   })
 })
 
