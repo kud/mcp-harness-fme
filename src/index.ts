@@ -178,13 +178,13 @@ export const getFlagUrl = async ({
   org_slug: string
   project: string
 }) => {
-  const accountId = process.env.HARNESS_ACCOUNT_ID
-  const orgGuid = process.env.HARNESS_ORG_GUID
+  const accountId = process.env.MCP_HARNESS_FME_ACCOUNT_ID
+  const orgGuid = process.env.MCP_HARNESS_FME_ORG_GUID
   if (!accountId || !orgGuid)
     return err(
-      "get_flag_url needs HARNESS_ACCOUNT_ID and HARNESS_ORG_GUID set on the server. " +
+      "get_flag_url needs MCP_HARNESS_FME_ACCOUNT_ID and MCP_HARNESS_FME_ORG_GUID set on the server. " +
         "These are the account ID and org GUID from a Harness FME flag URL in your browser " +
-        "(app.harness.io/ng/account/<HARNESS_ACCOUNT_ID>/… and …/org/<HARNESS_ORG_GUID>/…) — copy them once.",
+        "(app.harness.io/ng/account/<MCP_HARNESS_FME_ACCOUNT_ID>/… and …/org/<MCP_HARNESS_FME_ORG_GUID>/…) — copy them once.",
     )
   const url =
     `https://app.harness.io/ng/account/${accountId}/all/fme/orgs/${org_slug}` +
@@ -1040,7 +1040,7 @@ server.registerTool(
   "get_flag_url",
   {
     description:
-      "Build a deep-link to a feature flag's definition in the Harness FME web UI. Requires HARNESS_ACCOUNT_ID and HARNESS_ORG_GUID env vars on the server — those IDs are not exposed by the API, so copy them once from a flag URL in the browser. flag_id comes from get_feature_flag (.id); org_slug (organizationIdentifier) and project (projectIdentifier) come from list_workspaces.",
+      "Build a deep-link to a feature flag's definition in the Harness FME web UI. Requires MCP_HARNESS_FME_ACCOUNT_ID and MCP_HARNESS_FME_ORG_GUID env vars on the server — those IDs are not exposed by the API, so copy them once from a flag URL in the browser. flag_id comes from get_feature_flag (.id); org_slug (organizationIdentifier) and project (projectIdentifier) come from list_workspaces.",
     inputSchema: {
       workspace_id: z.string().describe("The workspace ID"),
       environment_id: z.string().describe("The environment ID"),

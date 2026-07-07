@@ -79,7 +79,7 @@ claude mcp add --transport stdio --scope user harness-fme \
 | `update_flag_definition`                   | Fully replace a flag's targeting rules in an environment — pass `title`/`comment` when `requiresTitleAndComments: true`                                       |
 | `delete_flag_definition`                   | Remove a flag's targeting rules from an environment (`confirm: true` required)                                                                                |
 | `add_segment_to_treatment`                 | Add a segment to a flag treatment via safe read-modify-write (idempotent; avoids full-replace) — pass `title`/`comment` when `requiresTitleAndComments: true` |
-| `get_flag_url`                             | Build a Harness FME web-UI deep-link for a flag (needs `HARNESS_ACCOUNT_ID`/`HARNESS_ORG_GUID` env vars)                                                      |
+| `get_flag_url`                             | Build a Harness FME web-UI deep-link for a flag (needs `MCP_HARNESS_FME_ACCOUNT_ID`/`MCP_HARNESS_FME_ORG_GUID` env vars)                                                      |
 | `list_segments`                            | List all segments in a workspace (API caps page size at 20)                                                                                                   |
 | `list_rule_based_segments`                 | List all rule-based segments in a workspace                                                                                                                   |
 | `get_rule_based_segment`                   | Get a rule-based segment's workspace-level metadata                                                                                                           |
@@ -103,7 +103,7 @@ npm test              # vitest
 npm run build         # compile to dist/
 ```
 
-The server reads `MCP_HARNESS_FME_API_KEY` at startup and exits immediately if it is absent. The `get_flag_url` tool additionally reads optional `HARNESS_ACCOUNT_ID` and `HARNESS_ORG_GUID` env vars (the account ID and org GUID from a flag URL in the Harness FME web UI — the API does not expose them). All tools are defined in `src/index.ts`.
+The server reads `MCP_HARNESS_FME_API_KEY` at startup and exits immediately if it is absent. The `get_flag_url` tool additionally reads optional `MCP_HARNESS_FME_ACCOUNT_ID` and `MCP_HARNESS_FME_ORG_GUID` env vars (the account ID and org GUID from a flag URL in the Harness FME web UI — the API does not expose them). All tools are defined in `src/index.ts`.
 
 ---
 

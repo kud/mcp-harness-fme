@@ -146,8 +146,8 @@ describe("getFlagUrl", () => {
   })
 
   it("assembles the deep-link URL when both env vars are set", async () => {
-    vi.stubEnv("HARNESS_ACCOUNT_ID", "acc-123")
-    vi.stubEnv("HARNESS_ORG_GUID", "org-guid-xyz")
+    vi.stubEnv("MCP_HARNESS_FME_ACCOUNT_ID", "acc-123")
+    vi.stubEnv("MCP_HARNESS_FME_ORG_GUID", "org-guid-xyz")
     const result = await api.getFlagUrl({
       workspace_id: "ws1",
       environment_id: "env1",
@@ -165,9 +165,9 @@ describe("getFlagUrl", () => {
     expect(mockFetch).not.toHaveBeenCalled()
   })
 
-  it("returns an error mentioning HARNESS_ACCOUNT_ID when env vars are unset", async () => {
-    vi.stubEnv("HARNESS_ACCOUNT_ID", "")
-    vi.stubEnv("HARNESS_ORG_GUID", "")
+  it("returns an error mentioning MCP_HARNESS_FME_ACCOUNT_ID when env vars are unset", async () => {
+    vi.stubEnv("MCP_HARNESS_FME_ACCOUNT_ID", "")
+    vi.stubEnv("MCP_HARNESS_FME_ORG_GUID", "")
     const result = await api.getFlagUrl({
       workspace_id: "ws1",
       environment_id: "env1",
@@ -175,7 +175,7 @@ describe("getFlagUrl", () => {
       org_slug: "MyOrg",
       project: "Default",
     })
-    expect(result.content[0].text).toContain("HARNESS_ACCOUNT_ID")
+    expect(result.content[0].text).toContain("MCP_HARNESS_FME_ACCOUNT_ID")
     expect(mockFetch).not.toHaveBeenCalled()
   })
 })
