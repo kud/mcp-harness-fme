@@ -321,22 +321,49 @@ const parseDefinition = (definition: string) => {
   }
 }
 
+// Merge optional top-level title/comment into a parsed definition body.
+// Workspaces with `requiresTitleAndComments: true` reject writes without them.
+// Fails loud when title/comment are supplied but the definition is not a
+// mergeable object (e.g. a JSON array), rather than silently dropping them.
+const withTitleComment = (
+  parsed: unknown,
+  title?: string,
+  comment?: string,
+): { body: unknown } | { error: string } => {
+  if (!title && !comment) return { body: parsed }
+  if (!parsed || typeof parsed !== "object" || Array.isArray(parsed))
+    return { error: "definition must be a JSON object to attach title/comment" }
+  return {
+    body: {
+      ...(parsed as Record<string, unknown>),
+      ...(title ? { title } : {}),
+      ...(comment ? { comment } : {}),
+    },
+  }
+}
+
 export const createFlagDefinition = async ({
   workspace_id,
   environment_id,
   flag_name,
   definition,
+  title,
+  comment,
 }: {
   workspace_id: string
   environment_id: string
   flag_name: string
   definition: string
+  title?: string
+  comment?: string
 }) => {
   const parsed = parseDefinition(definition)
   if (!parsed) return err("definition must be valid JSON")
+  const merged = withTitleComment(parsed, title, comment)
+  if ("error" in merged) return err(merged.error)
   const result = await apiFetch<unknown>(
     `/splits/ws/${workspace_id}/${flag_name}/environments/${environment_id}`,
-    { method: "POST", body: JSON.stringify(parsed) },
+    { method: "POST", body: JSON.stringify(merged.body) },
   )
   return result.ok
     ? ok(result.data)
@@ -350,17 +377,23 @@ export const updateFlagDefinition = async ({
   environment_id,
   flag_name,
   definition,
+  title,
+  comment,
 }: {
   workspace_id: string
   environment_id: string
   flag_name: string
   definition: string
+  title?: string
+  comment?: string
 }) => {
   const parsed = parseDefinition(definition)
   if (!parsed) return err("definition must be valid JSON")
+  const merged = withTitleComment(parsed, title, comment)
+  if ("error" in merged) return err(merged.error)
   const result = await apiFetch<unknown>(
     `/splits/ws/${workspace_id}/${flag_name}/environments/${environment_id}`,
-    { method: "PUT", body: JSON.stringify(parsed) },
+    { method: "PUT", body: JSON.stringify(merged.body) },
   )
   return result.ok
     ? ok(result.data)
@@ -889,7 +922,7 @@ server.registerTool(
   "create_flag_definition",
   {
     description:
-      "Create (activate) a feature flag definition in a specific environment with treatments and targeting rules",
+      "Create (activate) a feature flag definition in a specific environment with treatments and targeting rules. For workspaces where list_workspaces reports requiresTitleAndComments: true, pass title (and comment) or the API rejects the write with a 400.",
     inputSchema: {
       workspace_id: z.string().describe("The workspace ID"),
       environment_id: z.string().describe("The environment ID or name"),
@@ -898,6 +931,18 @@ server.registerTool(
         .string()
         .describe(
           "Full flag definition as a JSON string — must include treatments array and defaultRule",
+        ),
+      title: z
+        .string()
+        .optional()
+        .describe(
+          "Change title. Required for workspaces with requiresTitleAndComments: true",
+        ),
+      comment: z
+        .string()
+        .optional()
+        .describe(
+          "Change comment. Required for workspaces with requiresTitleAndComments: true",
         ),
     },
   },
@@ -908,7 +953,7 @@ server.registerTool(
   "update_flag_definition",
   {
     description:
-      "Fully replace a feature flag definition (treatments, targeting rules) in an environment",
+      "Fully replace a feature flag definition (treatments, targeting rules) in an environment. For workspaces where list_workspaces reports requiresTitleAndComments: true, pass title (and comment) or the API rejects the write with a 400.",
     inputSchema: {
       workspace_id: z.string().describe("The workspace ID"),
       environment_id: z.string().describe("The environment ID or name"),
@@ -917,6 +962,18 @@ server.registerTool(
         .string()
         .describe(
           "Complete updated definition as a JSON string — replaces the existing definition",
+        ),
+      title: z
+        .string()
+        .optional()
+        .describe(
+          "Change title. Required for workspaces with requiresTitleAndComments: true",
+        ),
+      comment: z
+        .string()
+        .optional()
+        .describe(
+          "Change comment. Required for workspaces with requiresTitleAndComments: true",
         ),
     },
   },

@@ -4,6 +4,14 @@ All notable changes to this project are documented here.
 
 ---
 
+## [1.3.0] — 2026-07-07
+
+### Features
+
+- Add optional top-level `title` and `comment` params to `create_flag_definition` and `update_flag_definition`, merged into the request body — no longer need to smuggle them inside the `definition` JSON string. Required for workspaces where `list_workspaces` reports `requiresTitleAndComments: true`.
+
+---
+
 ## [1.2.2] — 2026-06-01
 
 ### Bug Fixes
