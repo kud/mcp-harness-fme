@@ -160,23 +160,63 @@ export const getFlagDefinition = async ({
     : err(`failed to fetch flag definition: ${flag_name} (${result.message})`)
 }
 
-// Assemble a Harness FME web-UI deep-link. The account ID and org GUID the URL
-// needs are Harness *platform* identifiers, not exposed by the Split API this
-// server wraps — so they're read from env (set once per deployment) rather than
-// fetched or hardcoded. Read at call time so the server needn't restart to pick
-// them up and tests can vary them per case.
+// A Split/FME resource GUID (8-4-4-4-12). Used to tell an already-resolved id
+// from a human name so callers can pass either.
+const GUID_RE =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+
+// Resolve a flag reference (GUID passthrough, or look up its id by name).
+const resolveFlagId = async (
+  workspace_id: string,
+  flag: string,
+): Promise<{ id: string } | { error: string }> => {
+  if (GUID_RE.test(flag)) return { id: flag }
+  const res = await apiFetch<{ id?: string }>(
+    `/splits/ws/${workspace_id}/${flag}`,
+  )
+  if (!res.ok)
+    return { error: `failed to resolve flag: ${flag} (${res.message})` }
+  if (!res.data.id) return { error: `flag has no id: ${flag}` }
+  return { id: res.data.id }
+}
+
+// Resolve an environment reference (GUID passthrough, or look up its id by name).
+const resolveEnvId = async (
+  workspace_id: string,
+  environment: string,
+): Promise<{ id: string } | { error: string }> => {
+  if (GUID_RE.test(environment)) return { id: environment }
+  const res = await apiFetch<{ id: string; name: string }[]>(
+    `/environments/ws/${workspace_id}`,
+  )
+  if (!res.ok)
+    return { error: `failed to resolve environment (${res.message})` }
+  const env = res.data.find(
+    (e) => e.id === environment || e.name === environment,
+  )
+  if (!env)
+    return {
+      error: `environment not found: ${environment}. Available: ${
+        res.data.map((e) => e.name).join(", ") || "none"
+      }`,
+    }
+  return { id: env.id }
+}
+
+// Assemble a Harness FME web-UI deep-link. Accepts workspace/flag/environment by
+// name or id and resolves the GUIDs the URL needs (org slug, project, flag id,
+// env id) via the same endpoints the caller would otherwise hit — so a call is
+// just "which flag, which env". The account ID and org GUID are Harness
+// *platform* identifiers not exposed by the Split API, so they stay env-configured
+// (read at call time so the server needn't restart and tests can vary them).
 export const getFlagUrl = async ({
-  workspace_id,
-  environment_id,
-  flag_id,
-  org_slug,
-  project,
+  workspace,
+  flag,
+  environment,
 }: {
-  workspace_id: string
-  environment_id: string
-  flag_id: string
-  org_slug: string
-  project: string
+  workspace: string
+  flag: string
+  environment: string
 }) => {
   const accountId = process.env.MCP_HARNESS_FME_ACCOUNT_ID
   const orgGuid = process.env.MCP_HARNESS_FME_ORG_GUID
@@ -186,10 +226,35 @@ export const getFlagUrl = async ({
         "These are the account ID and org GUID from a Harness FME flag URL in your browser " +
         "(app.harness.io/ng/account/<MCP_HARNESS_FME_ACCOUNT_ID>/… and …/org/<MCP_HARNESS_FME_ORG_GUID>/…) — copy them once.",
     )
+
+  // Resolve workspace (by id or name) → id + org slug + project in one call.
+  const wsRes = await apiFetch<{
+    objects: {
+      id: string
+      name: string
+      organizationIdentifier?: string
+      projectIdentifier?: string
+    }[]
+  }>(`/workspaces?size=50&offset=0`)
+  if (!wsRes.ok) return err(`failed to resolve workspace (${wsRes.message})`)
+  const ws = wsRes.data.objects.find(
+    (w) => w.id === workspace || w.name === workspace,
+  )
+  if (!ws) return err(`workspace not found: ${workspace}`)
+  if (!ws.organizationIdentifier || !ws.projectIdentifier)
+    return err(
+      `workspace ${ws.name} has no organizationIdentifier/projectIdentifier to build a URL from`,
+    )
+
+  const flagRes = await resolveFlagId(ws.id, flag)
+  if ("error" in flagRes) return err(flagRes.error)
+  const envRes = await resolveEnvId(ws.id, environment)
+  if ("error" in envRes) return err(envRes.error)
+
   const url =
-    `https://app.harness.io/ng/account/${accountId}/all/fme/orgs/${org_slug}` +
-    `/projects/${project}/org/${orgGuid}/ws/${workspace_id}/splits/${flag_id}` +
-    `/env/${environment_id}/definition`
+    `https://app.harness.io/ng/account/${accountId}/all/fme/orgs/${ws.organizationIdentifier}` +
+    `/projects/${ws.projectIdentifier}/org/${orgGuid}/ws/${ws.id}/splits/${flagRes.id}` +
+    `/env/${envRes.id}/definition`
   return ok({ url })
 }
 
@@ -1040,23 +1105,13 @@ server.registerTool(
   "get_flag_url",
   {
     description:
-      "Build a deep-link to a feature flag's definition in the Harness FME web UI. Requires MCP_HARNESS_FME_ACCOUNT_ID and MCP_HARNESS_FME_ORG_GUID env vars on the server — those IDs are not exposed by the API, so copy them once from a flag URL in the browser. flag_id comes from get_feature_flag (.id); org_slug (organizationIdentifier) and project (projectIdentifier) come from list_workspaces.",
+      "Build a deep-link to a feature flag's definition in the Harness FME web UI. Pass workspace, flag, and environment by name or id — the org slug, project, flag id, and env id are resolved for you. Requires MCP_HARNESS_FME_ACCOUNT_ID and MCP_HARNESS_FME_ORG_GUID env vars on the server (those IDs are not exposed by the API — copy them once from a flag URL in the browser).",
     inputSchema: {
-      workspace_id: z.string().describe("The workspace ID"),
-      environment_id: z.string().describe("The environment ID"),
-      flag_id: z
+      workspace: z.string().describe("The workspace name or ID"),
+      flag: z.string().describe("The feature flag name or GUID"),
+      environment: z
         .string()
-        .describe("The feature flag's GUID (from get_feature_flag .id)"),
-      org_slug: z
-        .string()
-        .describe(
-          "Organization identifier (organizationIdentifier from list_workspaces)",
-        ),
-      project: z
-        .string()
-        .describe(
-          "Project identifier (projectIdentifier from list_workspaces)",
-        ),
+        .describe("The environment name or ID (e.g. 'Prod')"),
     },
   },
   getFlagUrl,

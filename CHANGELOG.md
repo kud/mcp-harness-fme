@@ -4,6 +4,18 @@ All notable changes to this project are documented here.
 
 ---
 
+## [1.5.0] — 2026-07-07
+
+### Changed
+
+- `get_flag_url` now takes just `workspace`, `flag`, and `environment` — each by **name or id** — and resolves the org slug, project, flag id, and env id internally (via the same endpoints a caller would otherwise hit). A GUID is used as-is; a name is looked up. Previously it required all five resolved values up front.
+
+### Documentation
+
+- Add a **Configuration** section to the README: a per-tool env-var table and a labelled Harness FME URL schema showing which segments become `MCP_HARNESS_FME_ACCOUNT_ID` / `MCP_HARNESS_FME_ORG_GUID` (and the `/orgs/` slug vs `/org/` GUID gotcha).
+
+---
+
 ## [1.4.1] — 2026-07-07
 
 ### Changed
