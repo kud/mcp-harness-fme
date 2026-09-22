@@ -8,8 +8,7 @@ const SPLIT_API_KEY = process.env.MCP_HARNESS_FME_API_KEY
 export const API_BASE = "https://api.split.io/internal/api/v2"
 
 export type ApiResult<T> =
-  | { ok: true; data: T }
-  | { ok: false; message: string }
+  { ok: true; data: T } | { ok: false; message: string }
 
 export const apiFetch = async <T>(
   path: string,
@@ -548,8 +547,7 @@ export const addSegmentToTreatment = async ({
     )
   const def = current.data
   const treatments = def.treatments as
-    | { name: string; segments?: string[] }[]
-    | undefined
+    { name: string; segments?: string[] }[] | undefined
   const target = treatments?.find((t) => t.name === treatment)
   if (!target)
     return err(
@@ -625,6 +623,58 @@ export const listSegments = async ({
   return result.ok
     ? ok(result.data)
     : err(`failed to fetch segments (${result.message})`)
+}
+
+export const listSegmentDefinitions = async ({
+  workspace_id,
+  environment_id,
+  limit,
+  offset,
+}: {
+  workspace_id: string
+  environment_id: string
+  limit: number
+  offset: number
+}) => {
+  const query = new URLSearchParams({
+    size: String(limit),
+    offset: String(offset),
+  })
+  const result = await apiFetch<{ objects: unknown[]; totalCount: number }>(
+    `/segments/ws/${workspace_id}/environments/${environment_id}?${query}`,
+  )
+  return result.ok
+    ? ok(result.data)
+    : err(`failed to fetch segment definitions (${result.message})`)
+}
+
+// Reads a classic segment's member keys in an environment — the one thing
+// list_segments/list_segment_definitions can't answer: whether a given
+// person is already in this segment. No workspace_id: the API scopes this
+// endpoint by environment + segment name only, same as the rule-based
+// segment definition endpoints.
+export const listSegmentKeys = async ({
+  environment_id,
+  segment_name,
+  limit,
+  offset,
+}: {
+  environment_id: string
+  segment_name: string
+  limit: number
+  offset: number
+}) => {
+  const query = new URLSearchParams({
+    size: String(limit),
+    offset: String(offset),
+  })
+  const result = await apiFetch<{
+    keys: { key: string }[]
+    count: number
+  }>(`/segments/${environment_id}/${segment_name}/keys?${query}`)
+  return result.ok
+    ? ok(result.data)
+    : err(`failed to fetch segment keys: ${segment_name} (${result.message})`)
 }
 
 // ─── Traffic Types ───
@@ -1244,6 +1294,44 @@ server.registerTool(
     },
   },
   listSegments,
+)
+
+server.registerTool(
+  "list_segment_definitions",
+  {
+    description:
+      "List classic segments activated in a specific environment, with their traffic type and creation time",
+    inputSchema: {
+      workspace_id: z.string().describe("The workspace ID"),
+      environment_id: z.string().describe("The environment ID or name"),
+      limit: z
+        .number()
+        .optional()
+        .default(20)
+        .describe("Number of results to return (max 50)"),
+      offset: z.number().optional().default(0).describe("Pagination offset"),
+    },
+  },
+  listSegmentDefinitions,
+)
+
+server.registerTool(
+  "list_segment_keys",
+  {
+    description:
+      "List the member keys (identifiers) of a classic segment in an environment — use this to check whether a given key is already in the segment before adding it",
+    inputSchema: {
+      environment_id: z.string().describe("The environment ID or name"),
+      segment_name: z.string().describe("The segment name"),
+      limit: z
+        .number()
+        .optional()
+        .default(100)
+        .describe("Number of keys to return (max 100)"),
+      offset: z.number().optional().default(0).describe("Pagination offset"),
+    },
+  },
+  listSegmentKeys,
 )
 
 server.registerTool(

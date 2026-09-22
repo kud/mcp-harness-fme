@@ -4,6 +4,15 @@ All notable changes to this project are documented here.
 
 ---
 
+## [1.5.3] — 2026-09-22
+
+### Features
+
+- Add `list_segment_definitions` — lists classic segments activated in a specific environment, mirroring `list_rule_based_segment_definitions`.
+- Add `list_segment_keys` — reads a classic segment's member keys in an environment, closing the gap where there was no way to tell whether a given key already belongs to a segment.
+
+---
+
 ## [1.5.2] — 2026-07-07
 
 ### Documentation

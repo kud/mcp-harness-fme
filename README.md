@@ -13,7 +13,7 @@
 
 ## Features
 
-- **30 tools** — covers workspaces, environments, feature flags, flag definitions, segments, rule-based segments, and change requests.
+- **32 tools** — covers workspaces, environments, feature flags, flag definitions, segments, rule-based segments, and change requests.
 - **Kill & restore** — instantly kill a flag to force all traffic to the default treatment, or restore it with a single tool call.
 - **Safety guard** — every destructive operation (delete, kill, archive, disable) requires `confirm: true`, preventing accidental changes.
 - **Rule-based segments** — create, update, enable, disable, and submit change requests for rule-based segments per environment.
@@ -93,6 +93,8 @@ Leave them out and every other tool still works — `get_flag_url` just reports 
 | `add_segment_to_treatment`                 | Add a segment to a flag treatment via safe read-modify-write (idempotent; avoids full-replace) — pass `title`/`comment` when `requiresTitleAndComments: true`                 |
 | `get_flag_url`                             | Build a Harness FME web-UI deep-link for a flag — pass workspace/flag/environment by name or id (needs two `MCP_HARNESS_FME_*` env vars, see [Configuration](#configuration)) |
 | `list_segments`                            | List all segments in a workspace (API caps page size at 20)                                                                                                                   |
+| `list_segment_definitions`                 | List classic segments activated in a specific environment                                                                                                                     |
+| `list_segment_keys`                        | List a classic segment's member keys in an environment — check whether a key is already in the segment                                                                        |
 | `list_rule_based_segments`                 | List all rule-based segments in a workspace                                                                                                                                   |
 | `get_rule_based_segment`                   | Get a rule-based segment's workspace-level metadata                                                                                                                           |
 | `create_rule_based_segment`                | Create a new rule-based segment in a workspace                                                                                                                                |

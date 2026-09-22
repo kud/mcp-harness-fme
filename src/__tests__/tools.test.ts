@@ -165,9 +165,7 @@ describe("getFlagUrl", () => {
         }),
       )
       .mockReturnValueOnce(jsonResponse({ id: "flag-guid-1" }))
-      .mockReturnValueOnce(
-        jsonResponse([{ id: "env-guid-1", name: "Prod" }]),
-      )
+      .mockReturnValueOnce(jsonResponse([{ id: "env-guid-1", name: "Prod" }]))
 
     const result = await api.getFlagUrl({
       workspace: "Default",
@@ -253,9 +251,7 @@ describe("getFlagUrl", () => {
         }),
       )
       .mockReturnValueOnce(jsonResponse({ id: "flag-guid-1" }))
-      .mockReturnValueOnce(
-        jsonResponse([{ id: "env-guid-1", name: "Prod" }]),
-      )
+      .mockReturnValueOnce(jsonResponse([{ id: "env-guid-1", name: "Prod" }]))
 
     const result = await api.getFlagUrl({
       workspace: "Default",
@@ -881,6 +877,69 @@ describe("listSegments", () => {
       offset: 0,
     })
     expect(result.content[0].text).toContain("Error:")
+  })
+})
+
+describe("listSegmentDefinitions", () => {
+  it("returns segment definitions on success", async () => {
+    mockFetch.mockReturnValue(
+      jsonResponse({ objects: [{ name: "beta-users" }], totalCount: 1 }),
+    )
+    const result = await api.listSegmentDefinitions({
+      workspace_id: "ws1",
+      environment_id: "production",
+      limit: 20,
+      offset: 0,
+    })
+    expect(result.content[0].text).toContain("beta-users")
+    expect(mockFetch).toHaveBeenCalledWith(
+      expect.stringContaining("/segments/ws/ws1/environments/production"),
+      expect.any(Object),
+    )
+  })
+
+  it("returns error when fetch fails", async () => {
+    mockFetch.mockReturnValue(errorResponse())
+    const result = await api.listSegmentDefinitions({
+      workspace_id: "ws1",
+      environment_id: "production",
+      limit: 20,
+      offset: 0,
+    })
+    expect(result.content[0].text).toContain("Error:")
+  })
+})
+
+describe("listSegmentKeys", () => {
+  it("returns segment keys on success", async () => {
+    mockFetch.mockReturnValue(
+      jsonResponse({ keys: [{ key: "user-1" }], count: 1 }),
+    )
+    const result = await api.listSegmentKeys({
+      environment_id: "production",
+      segment_name: "beta-users",
+      limit: 100,
+      offset: 0,
+    })
+    expect(result.content[0].text).toContain("user-1")
+    expect(mockFetch).toHaveBeenCalledWith(
+      expect.stringContaining(
+        "/segments/production/beta-users/keys?size=100&offset=0",
+      ),
+      expect.any(Object),
+    )
+  })
+
+  it("returns error when fetch fails", async () => {
+    mockFetch.mockReturnValue(errorResponse())
+    const result = await api.listSegmentKeys({
+      environment_id: "production",
+      segment_name: "beta-users",
+      limit: 100,
+      offset: 0,
+    })
+    expect(result.content[0].text).toContain("Error:")
+    expect(result.content[0].text).toContain("beta-users")
   })
 })
 
