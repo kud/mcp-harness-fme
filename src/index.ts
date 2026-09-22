@@ -677,6 +677,159 @@ export const listSegmentKeys = async ({
     : err(`failed to fetch segment keys: ${segment_name} (${result.message})`)
 }
 
+export const createSegment = async ({
+  workspace_id,
+  traffic_type,
+  name,
+  description,
+  owners,
+}: {
+  workspace_id: string
+  traffic_type: string
+  name: string
+  description?: string
+  owners?: Array<{ id: string; type: string }>
+}) => {
+  const body: Record<string, unknown> = { name }
+  if (description) body.description = description
+  if (owners) body.owners = owners
+  const result = await apiFetch<unknown>(
+    `/segments/ws/${workspace_id}/trafficTypes/${traffic_type}`,
+    { method: "POST", body: JSON.stringify(body) },
+  )
+  return result.ok
+    ? ok(result.data)
+    : err(`failed to create segment: ${name} (${result.message})`)
+}
+
+export const enableSegmentInEnvironment = async ({
+  environment_id,
+  segment_name,
+}: {
+  environment_id: string
+  segment_name: string
+}) => {
+  const result = await apiFetch<unknown>(
+    `/segments/${environment_id}/${segment_name}`,
+    { method: "POST", body: JSON.stringify({}) },
+  )
+  return result.ok
+    ? ok(result.data)
+    : err(`failed to enable segment: ${segment_name} (${result.message})`)
+}
+
+// Harness FME caps a single uploadKeys call at 10,000 keys and a segment's
+// total membership at 100,000 — the per-call cap is checked here so an
+// oversized batch fails with a clear message instead of an opaque API
+// rejection; the total-membership cap isn't checkable without an extra
+// round-trip to count existing members, so it isn't enforced client-side.
+const MAX_SEGMENT_KEYS_PER_CALL = 10000
+
+export const addSegmentKeys = async ({
+  environment_id,
+  segment_name,
+  keys,
+  replace,
+  comment,
+  confirm,
+}: {
+  environment_id: string
+  segment_name: string
+  keys: string[]
+  replace?: boolean
+  comment?: string
+  confirm: boolean
+}) => {
+  if (keys.length === 0) return err("keys must be a non-empty array")
+  if (keys.length > MAX_SEGMENT_KEYS_PER_CALL)
+    return err(
+      `too many keys: ${keys.length} exceeds the Harness FME limit of ${MAX_SEGMENT_KEYS_PER_CALL} per call — split into multiple calls`,
+    )
+  if (replace && !confirm)
+    return err("set confirm=true to replace this segment's existing keys")
+  const query = new URLSearchParams({ replace: String(Boolean(replace)) })
+  const body: Record<string, unknown> = { keys }
+  if (comment) body.comment = comment
+  const result = await apiFetch<unknown>(
+    `/segments/${environment_id}/${segment_name}/uploadKeys?${query}`,
+    { method: "PUT", body: JSON.stringify(body) },
+  )
+  return result.ok
+    ? ok(result.data)
+    : err(`failed to add keys to segment: ${segment_name} (${result.message})`)
+}
+
+export const removeSegmentKeys = async ({
+  environment_id,
+  segment_name,
+  keys,
+  confirm,
+}: {
+  environment_id: string
+  segment_name: string
+  keys: string[]
+  confirm: boolean
+}) => {
+  if (!confirm) return err("set confirm=true to remove keys from this segment")
+  if (keys.length === 0) return err("keys must be a non-empty array")
+  const result = await apiFetch<unknown>(
+    `/segments/${environment_id}/${segment_name}/removeKeys`,
+    { method: "PUT", body: JSON.stringify({ keys }) },
+  )
+  return result.ok
+    ? ok(result.data)
+    : err(
+        `failed to remove keys from segment: ${segment_name} (${result.message})`,
+      )
+}
+
+export const disableSegmentInEnvironment = async ({
+  environment_id,
+  segment_name,
+  confirm,
+}: {
+  environment_id: string
+  segment_name: string
+  confirm: boolean
+}) => {
+  if (!confirm)
+    return err("set confirm=true to disable this segment in the environment")
+  const response = await fetch(
+    `${API_BASE}/segments/${environment_id}/${segment_name}`,
+    {
+      method: "DELETE",
+      headers: { Authorization: `Bearer ${SPLIT_API_KEY}` },
+    },
+  )
+  if (!response.ok)
+    return err(
+      `failed to disable segment: ${segment_name} (${response.status})`,
+    )
+  return ok({ disabled: segment_name, environment: environment_id })
+}
+
+export const deleteSegment = async ({
+  workspace_id,
+  segment_name,
+  confirm,
+}: {
+  workspace_id: string
+  segment_name: string
+  confirm: boolean
+}) => {
+  if (!confirm) return err("set confirm=true to delete this segment")
+  const response = await fetch(
+    `${API_BASE}/segments/ws/${workspace_id}/${segment_name}`,
+    {
+      method: "DELETE",
+      headers: { Authorization: `Bearer ${SPLIT_API_KEY}` },
+    },
+  )
+  if (!response.ok)
+    return err(`failed to delete segment: ${segment_name} (${response.status})`)
+  return ok({ deleted: segment_name })
+}
+
 // ─── Traffic Types ───
 
 export const listTrafficTypes = async ({
@@ -1332,6 +1485,118 @@ server.registerTool(
     },
   },
   listSegmentKeys,
+)
+
+server.registerTool(
+  "create_segment",
+  {
+    description:
+      "Create a new classic (explicit-membership) segment in a workspace under a specific traffic type",
+    inputSchema: {
+      workspace_id: z.string().describe("The workspace ID"),
+      traffic_type: z.string().describe("The traffic type ID or name"),
+      name: z.string().describe("The segment name (unique per workspace)"),
+      description: z.string().optional().describe("Optional description"),
+      owners: z
+        .array(z.object({ id: z.string(), type: z.string() }))
+        .optional()
+        .describe("Owners to set — array of {id, type}"),
+    },
+  },
+  createSegment,
+)
+
+server.registerTool(
+  "enable_segment_in_environment",
+  {
+    description:
+      "Activate a classic segment in a specific environment — creates an empty membership that keys can then be added to",
+    inputSchema: {
+      environment_id: z.string().describe("The environment ID or name"),
+      segment_name: z.string().describe("The segment name"),
+    },
+  },
+  enableSegmentInEnvironment,
+)
+
+server.registerTool(
+  "add_segment_keys",
+  {
+    description:
+      "Add member keys to a classic segment in an environment. Appends by default; pass replace: true to wipe existing membership first (confirm: true required for that case). Max 10,000 keys per call, 100,000 members per segment — split larger batches across multiple calls.",
+    inputSchema: {
+      environment_id: z.string().describe("The environment ID or name"),
+      segment_name: z.string().describe("The segment name"),
+      keys: z
+        .array(z.string())
+        .describe("Member keys to add (max 10,000 per call)"),
+      replace: z
+        .boolean()
+        .optional()
+        .default(false)
+        .describe(
+          "Replace the segment's entire membership with these keys instead of appending — requires confirm: true",
+        ),
+      comment: z.string().optional().describe("Optional change comment"),
+      confirm: z
+        .boolean()
+        .default(false)
+        .describe("Must be true when replace: true is set"),
+    },
+  },
+  addSegmentKeys,
+)
+
+server.registerTool(
+  "remove_segment_keys",
+  {
+    description:
+      "Remove specific member keys from a classic segment in an environment",
+    inputSchema: {
+      environment_id: z.string().describe("The environment ID or name"),
+      segment_name: z.string().describe("The segment name"),
+      keys: z.array(z.string()).describe("Member keys to remove"),
+      confirm: z
+        .boolean()
+        .default(false)
+        .describe("Must be true to execute the removal"),
+    },
+  },
+  removeSegmentKeys,
+)
+
+server.registerTool(
+  "disable_segment_in_environment",
+  {
+    description:
+      "Disable (remove) a classic segment from a specific environment — workspace-level metadata and other environments' activations are preserved",
+    inputSchema: {
+      environment_id: z.string().describe("The environment ID or name"),
+      segment_name: z.string().describe("The segment name"),
+      confirm: z
+        .boolean()
+        .default(false)
+        .describe("Must be true to execute the disable"),
+    },
+  },
+  disableSegmentInEnvironment,
+)
+
+server.registerTool(
+  "delete_segment",
+  {
+    description:
+      "Permanently delete a classic segment from a workspace — environment-level activations must be removed separately first",
+    inputSchema: {
+      workspace_id: z.string().describe("The workspace ID"),
+      segment_name: z.string().describe("The segment name"),
+      confirm: z
+        .boolean()
+        .default(false)
+        .describe("Must be true to execute the deletion"),
+    },
+  },
+  deleteSegment,
 )
 
 server.registerTool(

@@ -13,7 +13,7 @@
 
 ## Features
 
-- **32 tools** — covers workspaces, environments, feature flags, flag definitions, segments, rule-based segments, and change requests.
+- **38 tools** — covers workspaces, environments, feature flags, flag definitions, segments, rule-based segments, and change requests.
 - **Kill & restore** — instantly kill a flag to force all traffic to the default treatment, or restore it with a single tool call.
 - **Safety guard** — every destructive operation (delete, kill, archive, disable) requires `confirm: true`, preventing accidental changes.
 - **Rule-based segments** — create, update, enable, disable, and submit change requests for rule-based segments per environment.
@@ -95,6 +95,12 @@ Leave them out and every other tool still works — `get_flag_url` just reports 
 | `list_segments`                            | List all segments in a workspace (API caps page size at 20)                                                                                                                   |
 | `list_segment_definitions`                 | List classic segments activated in a specific environment                                                                                                                     |
 | `list_segment_keys`                        | List a classic segment's member keys in an environment — check whether a key is already in the segment                                                                        |
+| `create_segment`                           | Create a new classic segment in a workspace under a traffic type                                                                                                              |
+| `enable_segment_in_environment`            | Activate a classic segment in an environment                                                                                                                                  |
+| `add_segment_keys`                         | Add member keys to a classic segment in an environment — pass `replace: true` (with `confirm: true`) to wipe existing membership first (max 10,000 keys/call)                 |
+| `remove_segment_keys`                      | Remove specific member keys from a classic segment (`confirm: true` required)                                                                                                 |
+| `disable_segment_in_environment`           | Remove a classic segment from an environment (`confirm: true` required)                                                                                                       |
+| `delete_segment`                           | Permanently delete a classic segment from a workspace (`confirm: true` required)                                                                                              |
 | `list_rule_based_segments`                 | List all rule-based segments in a workspace                                                                                                                                   |
 | `get_rule_based_segment`                   | Get a rule-based segment's workspace-level metadata                                                                                                                           |
 | `create_rule_based_segment`                | Create a new rule-based segment in a workspace                                                                                                                                |

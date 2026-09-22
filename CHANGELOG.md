@@ -4,6 +4,14 @@ All notable changes to this project are documented here.
 
 ---
 
+## [1.6.0] — 2026-09-22
+
+### Features
+
+- Add classic segment write tools: `create_segment`, `enable_segment_in_environment`, `add_segment_keys`, `remove_segment_keys`, `disable_segment_in_environment`, and `delete_segment` — the create → activate → key-upload path plus deactivate/delete, matching the shape already used for rule-based segments. `add_segment_keys` checks the documented 10,000-keys-per-call cap client-side and returns a clear error instead of letting an oversized batch fail opaquely at the API. Destructive operations (`delete_segment`, `disable_segment_in_environment`, `remove_segment_keys`, and `add_segment_keys` with `replace: true`) require `confirm: true`.
+
+---
+
 ## [1.5.3] — 2026-09-22
 
 ### Features

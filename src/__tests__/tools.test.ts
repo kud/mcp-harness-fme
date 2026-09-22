@@ -943,6 +943,295 @@ describe("listSegmentKeys", () => {
   })
 })
 
+describe("createSegment", () => {
+  it("creates segment on success", async () => {
+    mockFetch.mockReturnValue(jsonResponse({ name: "beta-users" }))
+    const result = await api.createSegment({
+      workspace_id: "ws1",
+      traffic_type: "user",
+      name: "beta-users",
+    })
+    expect(result.content[0].text).toContain("beta-users")
+    expect(mockFetch).toHaveBeenCalledWith(
+      expect.stringContaining("/segments/ws/ws1/trafficTypes/user"),
+      expect.objectContaining({ method: "POST" }),
+    )
+  })
+
+  it("includes description and owners in body when provided", async () => {
+    mockFetch.mockReturnValue(jsonResponse({ name: "beta-users" }))
+    await api.createSegment({
+      workspace_id: "ws1",
+      traffic_type: "user",
+      name: "beta-users",
+      description: "Beta testers",
+      owners: [{ id: "team-1", type: "Team" }],
+    })
+    const call = mockFetch.mock.calls[0]
+    expect(JSON.parse(call[1]?.body as string)).toMatchObject({
+      description: "Beta testers",
+      owners: [{ id: "team-1", type: "Team" }],
+    })
+  })
+
+  it("returns error when api fails", async () => {
+    mockFetch.mockReturnValue(errorResponse())
+    const result = await api.createSegment({
+      workspace_id: "ws1",
+      traffic_type: "user",
+      name: "beta-users",
+    })
+    expect(result.content[0].text).toContain("Error:")
+  })
+})
+
+describe("enableSegmentInEnvironment", () => {
+  it("enables segment in environment on success", async () => {
+    mockFetch.mockReturnValue(jsonResponse({ name: "beta-users" }))
+    const result = await api.enableSegmentInEnvironment({
+      environment_id: "production",
+      segment_name: "beta-users",
+    })
+    expect(result.content[0].text).toContain("beta-users")
+    expect(mockFetch).toHaveBeenCalledWith(
+      expect.stringContaining("/segments/production/beta-users"),
+      expect.objectContaining({ method: "POST" }),
+    )
+  })
+
+  it("returns error when api fails", async () => {
+    mockFetch.mockReturnValue(errorResponse())
+    const result = await api.enableSegmentInEnvironment({
+      environment_id: "production",
+      segment_name: "beta-users",
+    })
+    expect(result.content[0].text).toContain("Error:")
+  })
+})
+
+describe("addSegmentKeys", () => {
+  it("appends keys on success", async () => {
+    mockFetch.mockReturnValue(jsonResponse({ name: "beta-users" }))
+    const result = await api.addSegmentKeys({
+      environment_id: "production",
+      segment_name: "beta-users",
+      keys: ["user-1", "user-2"],
+      confirm: false,
+    })
+    expect(result.content[0].text).toContain("beta-users")
+    expect(mockFetch).toHaveBeenCalledWith(
+      expect.stringContaining(
+        "/segments/production/beta-users/uploadKeys?replace=false",
+      ),
+      expect.objectContaining({ method: "PUT" }),
+    )
+  })
+
+  it("returns error for an empty keys array", async () => {
+    const result = await api.addSegmentKeys({
+      environment_id: "production",
+      segment_name: "beta-users",
+      keys: [],
+      confirm: false,
+    })
+    expect(result.content[0].text).toContain("non-empty array")
+    expect(mockFetch).not.toHaveBeenCalled()
+  })
+
+  it("returns error when keys exceed the per-call limit", async () => {
+    const result = await api.addSegmentKeys({
+      environment_id: "production",
+      segment_name: "beta-users",
+      keys: Array.from({ length: 10001 }, (_, i) => `user-${i}`),
+      confirm: false,
+    })
+    expect(result.content[0].text).toContain("too many keys")
+    expect(mockFetch).not.toHaveBeenCalled()
+  })
+
+  it("blocks a replace without confirm", async () => {
+    const result = await api.addSegmentKeys({
+      environment_id: "production",
+      segment_name: "beta-users",
+      keys: ["user-1"],
+      replace: true,
+      confirm: false,
+    })
+    expect(result.content[0].text).toContain("Error:")
+    expect(result.content[0].text).toContain("confirm=true")
+    expect(mockFetch).not.toHaveBeenCalled()
+  })
+
+  it("replaces keys when confirmed", async () => {
+    mockFetch.mockReturnValue(jsonResponse({ name: "beta-users" }))
+    const result = await api.addSegmentKeys({
+      environment_id: "production",
+      segment_name: "beta-users",
+      keys: ["user-1"],
+      replace: true,
+      confirm: true,
+    })
+    expect(result.content[0].text).toContain("beta-users")
+    expect(mockFetch).toHaveBeenCalledWith(
+      expect.stringContaining("uploadKeys?replace=true"),
+      expect.objectContaining({ method: "PUT" }),
+    )
+  })
+
+  it("includes comment in body when provided", async () => {
+    mockFetch.mockReturnValue(jsonResponse({ name: "beta-users" }))
+    await api.addSegmentKeys({
+      environment_id: "production",
+      segment_name: "beta-users",
+      keys: ["user-1"],
+      comment: "Adding new cohort",
+      confirm: false,
+    })
+    const call = mockFetch.mock.calls[0]
+    expect(JSON.parse(call[1]?.body as string)).toMatchObject({
+      comment: "Adding new cohort",
+    })
+  })
+
+  it("returns error when api fails", async () => {
+    mockFetch.mockReturnValue(errorResponse())
+    const result = await api.addSegmentKeys({
+      environment_id: "production",
+      segment_name: "beta-users",
+      keys: ["user-1"],
+      confirm: false,
+    })
+    expect(result.content[0].text).toContain("Error:")
+  })
+})
+
+describe("removeSegmentKeys", () => {
+  it("blocks execution without confirm", async () => {
+    const result = await api.removeSegmentKeys({
+      environment_id: "production",
+      segment_name: "beta-users",
+      keys: ["user-1"],
+      confirm: false,
+    })
+    expect(result.content[0].text).toContain("Error:")
+    expect(result.content[0].text).toContain("confirm=true")
+    expect(mockFetch).not.toHaveBeenCalled()
+  })
+
+  it("returns error for an empty keys array", async () => {
+    const result = await api.removeSegmentKeys({
+      environment_id: "production",
+      segment_name: "beta-users",
+      keys: [],
+      confirm: true,
+    })
+    expect(result.content[0].text).toContain("non-empty array")
+    expect(mockFetch).not.toHaveBeenCalled()
+  })
+
+  it("removes keys when confirmed", async () => {
+    mockFetch.mockReturnValue(jsonResponse({ name: "beta-users" }))
+    const result = await api.removeSegmentKeys({
+      environment_id: "production",
+      segment_name: "beta-users",
+      keys: ["user-1"],
+      confirm: true,
+    })
+    expect(result.content[0].text).toContain("beta-users")
+    expect(mockFetch).toHaveBeenCalledWith(
+      expect.stringContaining("/segments/production/beta-users/removeKeys"),
+      expect.objectContaining({ method: "PUT" }),
+    )
+  })
+
+  it("returns error when api fails", async () => {
+    mockFetch.mockReturnValue(errorResponse())
+    const result = await api.removeSegmentKeys({
+      environment_id: "production",
+      segment_name: "beta-users",
+      keys: ["user-1"],
+      confirm: true,
+    })
+    expect(result.content[0].text).toContain("Error:")
+  })
+})
+
+describe("disableSegmentInEnvironment", () => {
+  it("blocks execution without confirm", async () => {
+    const result = await api.disableSegmentInEnvironment({
+      environment_id: "production",
+      segment_name: "beta-users",
+      confirm: false,
+    })
+    expect(result.content[0].text).toContain("Error:")
+    expect(result.content[0].text).toContain("confirm=true")
+    expect(mockFetch).not.toHaveBeenCalled()
+  })
+
+  it("disables segment when confirmed", async () => {
+    mockFetch.mockReturnValue(Promise.resolve({ ok: true }))
+    const result = await api.disableSegmentInEnvironment({
+      environment_id: "production",
+      segment_name: "beta-users",
+      confirm: true,
+    })
+    expect(result.content[0].text).toContain("beta-users")
+    expect(mockFetch).toHaveBeenCalledWith(
+      expect.stringContaining("/segments/production/beta-users"),
+      expect.objectContaining({ method: "DELETE" }),
+    )
+  })
+
+  it("returns error when api fails", async () => {
+    mockFetch.mockReturnValue(Promise.resolve({ ok: false, status: 404 }))
+    const result = await api.disableSegmentInEnvironment({
+      environment_id: "production",
+      segment_name: "beta-users",
+      confirm: true,
+    })
+    expect(result.content[0].text).toContain("Error:")
+    expect(result.content[0].text).toContain("404")
+  })
+})
+
+describe("deleteSegment", () => {
+  it("blocks execution without confirm", async () => {
+    const result = await api.deleteSegment({
+      workspace_id: "ws1",
+      segment_name: "beta-users",
+      confirm: false,
+    })
+    expect(result.content[0].text).toContain("Error:")
+    expect(result.content[0].text).toContain("confirm=true")
+    expect(mockFetch).not.toHaveBeenCalled()
+  })
+
+  it("deletes segment when confirmed", async () => {
+    mockFetch.mockReturnValue(Promise.resolve({ ok: true }))
+    const result = await api.deleteSegment({
+      workspace_id: "ws1",
+      segment_name: "beta-users",
+      confirm: true,
+    })
+    expect(result.content[0].text).toContain("beta-users")
+    expect(mockFetch).toHaveBeenCalledWith(
+      expect.stringContaining("/segments/ws/ws1/beta-users"),
+      expect.objectContaining({ method: "DELETE" }),
+    )
+  })
+
+  it("returns error when api fails", async () => {
+    mockFetch.mockReturnValue(Promise.resolve({ ok: false, status: 403 }))
+    const result = await api.deleteSegment({
+      workspace_id: "ws1",
+      segment_name: "beta-users",
+      confirm: true,
+    })
+    expect(result.content[0].text).toContain("Error:")
+    expect(result.content[0].text).toContain("403")
+  })
+})
+
 // ─── Traffic Types ───
 
 describe("listTrafficTypes", () => {
