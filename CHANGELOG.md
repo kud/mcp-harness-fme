@@ -4,6 +4,14 @@ All notable changes to this project are documented here.
 
 ---
 
+## [1.6.1] — 2026-09-23
+
+### Fixes
+
+- `add_segment_keys` and `remove_segment_keys` now accept an optional `title` (and `remove_segment_keys` also accepts `comment`). Workspaces where `list_workspaces` reports `requiresTitleAndComments: true` rejected both calls with `400 Comment/title combination invalid for workspace` unless a title was sent, and `add_segment_keys` previously only forwarded `comment`, so key uploads and removals were impossible in those workspaces. ([5a5e91c](https://github.com/kud/mcp-harness-fme/commit/5a5e91c57d6c3f97fdf0b3078fd856493182ef2f))
+
+---
+
 ## [1.6.0] — 2026-09-22
 
 ### Features
