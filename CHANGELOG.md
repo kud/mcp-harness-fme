@@ -4,6 +4,14 @@ All notable changes to this project are documented here.
 
 ---
 
+## [1.6.2] — 2026-09-23
+
+### Fixes
+
+- Every admin API call now retries a `429` response up to three times instead of failing outright with `429 Organization has been throttled`. The admin API's rate-limit budget (around 20 requests per 10s window) is shared across the whole organisation, so another integration hitting it at the same time could exhaust it and break otherwise-valid calls. The retry waits for the window named in the `x-ratelimit-reset-seconds-org` response header, falling back to `x-ratelimit-reset-seconds-ip` and then a 2s default, capped at roughly 12s per wait. ([6b60d4c](https://github.com/kud/mcp-harness-fme/commit/6b60d4c0221e5e37dfb70537d972c2c6bacf3a8d))
+
+---
+
 ## [1.6.1] — 2026-09-23
 
 ### Fixes
