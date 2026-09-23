@@ -1521,3 +1521,91 @@ describe("disableRuleBasedSegmentDefinition", () => {
     )
   })
 })
+
+// ─── Rate limiting ───
+
+const rateLimitedResponse = (resetSeconds?: string) =>
+  Promise.resolve({
+    ok: false,
+    status: 429,
+    headers: new Headers(
+      resetSeconds ? { "x-ratelimit-reset-seconds-org": resetSeconds } : {},
+    ),
+    text: () =>
+      Promise.resolve('{"message":"Organization has been throttled"}'),
+  })
+
+describe("rate limiting", () => {
+  beforeEach(() => {
+    vi.useFakeTimers()
+  })
+
+  afterEach(() => {
+    vi.useRealTimers()
+  })
+
+  it("retries a 429 and returns the eventual success", async () => {
+    mockFetch
+      .mockReturnValueOnce(rateLimitedResponse("3"))
+      .mockReturnValueOnce(jsonResponse({ objects: [{ id: "ws1" }] }))
+    const pending = api.listWorkspaces({ limit: 20, offset: 0 })
+    await vi.runAllTimersAsync()
+    const result = await pending
+    expect(result.content[0].text).toContain("ws1")
+    expect(mockFetch).toHaveBeenCalledTimes(2)
+  })
+
+  it("gives up after three retries and surfaces the 429", async () => {
+    mockFetch.mockImplementation(() => rateLimitedResponse("1"))
+    const pending = api.listWorkspaces({ limit: 20, offset: 0 })
+    await vi.runAllTimersAsync()
+    const result = await pending
+    expect(result.content[0].text).toContain("429")
+    expect(mockFetch).toHaveBeenCalledTimes(4)
+  })
+
+  it("retries direct-fetch tools too", async () => {
+    mockFetch
+      .mockReturnValueOnce(rateLimitedResponse("1"))
+      .mockReturnValueOnce(Promise.resolve({ ok: true, status: 200 }))
+    const pending = api.deleteSegment({
+      workspace_id: "ws1",
+      segment_name: "beta-users",
+      confirm: true,
+    })
+    await vi.runAllTimersAsync()
+    await pending
+    expect(mockFetch).toHaveBeenCalledTimes(2)
+  })
+})
+
+describe("rateLimitWaitMs", () => {
+  const withHeaders = (headers: Record<string, string>) =>
+    ({ headers: new Headers(headers) }) as Response
+
+  it("waits for the window the org header names", () => {
+    expect(
+      api.rateLimitWaitMs(
+        withHeaders({ "x-ratelimit-reset-seconds-org": "6" }),
+      ),
+    ).toBe(6250)
+  })
+
+  it("falls back to the ip header", () => {
+    expect(
+      api.rateLimitWaitMs(withHeaders({ "x-ratelimit-reset-seconds-ip": "4" })),
+    ).toBe(4250)
+  })
+
+  it("uses a short default when no header is sent", () => {
+    expect(api.rateLimitWaitMs(withHeaders({}))).toBe(2250)
+  })
+
+  it("caps a long reset so a tool call never hangs", () => {
+    expect(
+      api.rateLimitWaitMs(
+        withHeaders({ "x-ratelimit-reset-seconds-org": "300" }),
+      ),
+    ).toBe(12250)
+  })
+})

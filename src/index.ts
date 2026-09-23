@@ -7,6 +7,40 @@ const SPLIT_API_KEY = process.env.MCP_HARNESS_FME_API_KEY
 
 export const API_BASE = "https://api.split.io/internal/api/v2"
 
+// The admin API's request budget is shared by the whole organisation (about 20
+// requests per 10-second window, per its x-ratelimit-* headers), so another
+// integration can drain it and a single call gets 429 through no fault of its
+// own. Waiting out the window the API names, instead of failing on the first
+// 429, is what keeps writes usable while the organisation is busy.
+const RATE_LIMIT_RETRIES = 3
+const RATE_LIMIT_FALLBACK_WAIT_MS = 2000
+const RATE_LIMIT_MAX_WAIT_MS = 12_000
+
+export const rateLimitWaitMs = (response: Response) => {
+  const header =
+    response.headers?.get("x-ratelimit-reset-seconds-org") ??
+    response.headers?.get("x-ratelimit-reset-seconds-ip")
+  const seconds = Number(header)
+  const waitMs =
+    header && Number.isFinite(seconds) && seconds > 0
+      ? seconds * 1000
+      : RATE_LIMIT_FALLBACK_WAIT_MS
+  return Math.min(waitMs, RATE_LIMIT_MAX_WAIT_MS) + 250
+}
+
+const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
+
+export const fetchWithRateLimit = async (
+  url: string,
+  init: RequestInit,
+  retriesLeft = RATE_LIMIT_RETRIES,
+): Promise<Response> => {
+  const response = await fetch(url, init)
+  if (response.status !== 429 || retriesLeft === 0) return response
+  await sleep(rateLimitWaitMs(response))
+  return fetchWithRateLimit(url, init, retriesLeft - 1)
+}
+
 export type ApiResult<T> =
   { ok: true; data: T } | { ok: false; message: string }
 
@@ -15,7 +49,7 @@ export const apiFetch = async <T>(
   options: RequestInit = {},
 ): Promise<ApiResult<T>> => {
   try {
-    const response = await fetch(`${API_BASE}${path}`, {
+    const response = await fetchWithRateLimit(`${API_BASE}${path}`, {
       ...options,
       headers: {
         Authorization: `Bearer ${SPLIT_API_KEY}`,
@@ -370,7 +404,7 @@ export const deleteFeatureFlag = async ({
   confirm: boolean
 }) => {
   if (!confirm) return err("set confirm=true to delete this feature flag")
-  const response = await fetch(
+  const response = await fetchWithRateLimit(
     `${API_BASE}/splits/ws/${workspace_id}/${flag_name}`,
     {
       method: "DELETE",
@@ -588,7 +622,7 @@ export const deleteFlagDefinition = async ({
   confirm: boolean
 }) => {
   if (!confirm) return err("set confirm=true to delete this flag definition")
-  const response = await fetch(
+  const response = await fetchWithRateLimit(
     `${API_BASE}/splits/ws/${workspace_id}/${flag_name}/environments/${environment_id}`,
     {
       method: "DELETE",
@@ -810,7 +844,7 @@ export const disableSegmentInEnvironment = async ({
 }) => {
   if (!confirm)
     return err("set confirm=true to disable this segment in the environment")
-  const response = await fetch(
+  const response = await fetchWithRateLimit(
     `${API_BASE}/segments/${environment_id}/${segment_name}`,
     {
       method: "DELETE",
@@ -834,7 +868,7 @@ export const deleteSegment = async ({
   confirm: boolean
 }) => {
   if (!confirm) return err("set confirm=true to delete this segment")
-  const response = await fetch(
+  const response = await fetchWithRateLimit(
     `${API_BASE}/segments/ws/${workspace_id}/${segment_name}`,
     {
       method: "DELETE",
@@ -983,7 +1017,7 @@ export const deleteRuleBasedSegment = async ({
   confirm: boolean
 }) => {
   if (!confirm) return err("set confirm=true to delete this rule-based segment")
-  const response = await fetch(
+  const response = await fetchWithRateLimit(
     `${API_BASE}/rule-based-segments/ws/${workspace_id}/${segment_name}`,
     { method: "DELETE", headers: { Authorization: `Bearer ${SPLIT_API_KEY}` } },
   )
@@ -1068,7 +1102,7 @@ export const disableRuleBasedSegmentDefinition = async ({
 }) => {
   if (!confirm)
     return err("set confirm=true to disable this rule-based segment definition")
-  const response = await fetch(
+  const response = await fetchWithRateLimit(
     `${API_BASE}/rule-based-segments/${environment_id}/${segment_name}`,
     { method: "DELETE", headers: { Authorization: `Bearer ${SPLIT_API_KEY}` } },
   )
