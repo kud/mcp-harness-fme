@@ -1093,6 +1093,23 @@ describe("addSegmentKeys", () => {
     })
   })
 
+  it("includes title and comment in body when provided", async () => {
+    mockFetch.mockReturnValue(jsonResponse({ name: "beta-users" }))
+    await api.addSegmentKeys({
+      environment_id: "production",
+      segment_name: "beta-users",
+      keys: ["user-1"],
+      title: "Add cohort",
+      comment: "Adding new cohort",
+      confirm: false,
+    })
+    expect(JSON.parse(mockFetch.mock.calls[0][1]?.body as string)).toEqual({
+      keys: ["user-1"],
+      title: "Add cohort",
+      comment: "Adding new cohort",
+    })
+  })
+
   it("returns error when api fails", async () => {
     mockFetch.mockReturnValue(errorResponse())
     const result = await api.addSegmentKeys({
@@ -1142,6 +1159,36 @@ describe("removeSegmentKeys", () => {
       expect.stringContaining("/segments/production/beta-users/removeKeys"),
       expect.objectContaining({ method: "PUT" }),
     )
+  })
+
+  it("includes title and comment in body when provided", async () => {
+    mockFetch.mockReturnValue(jsonResponse({ name: "beta-users" }))
+    await api.removeSegmentKeys({
+      environment_id: "production",
+      segment_name: "beta-users",
+      keys: ["user-1"],
+      title: "Remove leaver",
+      comment: "Left the team",
+      confirm: true,
+    })
+    expect(JSON.parse(mockFetch.mock.calls[0][1]?.body as string)).toEqual({
+      keys: ["user-1"],
+      title: "Remove leaver",
+      comment: "Left the team",
+    })
+  })
+
+  it("sends only keys when title and comment are omitted", async () => {
+    mockFetch.mockReturnValue(jsonResponse({ name: "beta-users" }))
+    await api.removeSegmentKeys({
+      environment_id: "production",
+      segment_name: "beta-users",
+      keys: ["user-1"],
+      confirm: true,
+    })
+    expect(JSON.parse(mockFetch.mock.calls[0][1]?.body as string)).toEqual({
+      keys: ["user-1"],
+    })
   })
 
   it("returns error when api fails", async () => {

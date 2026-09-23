@@ -725,11 +725,18 @@ export const enableSegmentInEnvironment = async ({
 // round-trip to count existing members, so it isn't enforced client-side.
 const MAX_SEGMENT_KEYS_PER_CALL = 10000
 
+const segmentKeysBody = (keys: string[], title?: string, comment?: string) => ({
+  keys,
+  ...(title ? { title } : {}),
+  ...(comment ? { comment } : {}),
+})
+
 export const addSegmentKeys = async ({
   environment_id,
   segment_name,
   keys,
   replace,
+  title,
   comment,
   confirm,
 }: {
@@ -737,6 +744,7 @@ export const addSegmentKeys = async ({
   segment_name: string
   keys: string[]
   replace?: boolean
+  title?: string
   comment?: string
   confirm: boolean
 }) => {
@@ -748,11 +756,12 @@ export const addSegmentKeys = async ({
   if (replace && !confirm)
     return err("set confirm=true to replace this segment's existing keys")
   const query = new URLSearchParams({ replace: String(Boolean(replace)) })
-  const body: Record<string, unknown> = { keys }
-  if (comment) body.comment = comment
   const result = await apiFetch<unknown>(
     `/segments/${environment_id}/${segment_name}/uploadKeys?${query}`,
-    { method: "PUT", body: JSON.stringify(body) },
+    {
+      method: "PUT",
+      body: JSON.stringify(segmentKeysBody(keys, title, comment)),
+    },
   )
   return result.ok
     ? ok(result.data)
@@ -763,18 +772,25 @@ export const removeSegmentKeys = async ({
   environment_id,
   segment_name,
   keys,
+  title,
+  comment,
   confirm,
 }: {
   environment_id: string
   segment_name: string
   keys: string[]
+  title?: string
+  comment?: string
   confirm: boolean
 }) => {
   if (!confirm) return err("set confirm=true to remove keys from this segment")
   if (keys.length === 0) return err("keys must be a non-empty array")
   const result = await apiFetch<unknown>(
     `/segments/${environment_id}/${segment_name}/removeKeys`,
-    { method: "PUT", body: JSON.stringify({ keys }) },
+    {
+      method: "PUT",
+      body: JSON.stringify(segmentKeysBody(keys, title, comment)),
+    },
   )
   return result.ok
     ? ok(result.data)
@@ -1523,7 +1539,7 @@ server.registerTool(
   "add_segment_keys",
   {
     description:
-      "Add member keys to a classic segment in an environment. Appends by default; pass replace: true to wipe existing membership first (confirm: true required for that case). Max 10,000 keys per call, 100,000 members per segment — split larger batches across multiple calls.",
+      "Add member keys to a classic segment in an environment. Appends by default; pass replace: true to wipe existing membership first (confirm: true required for that case). Max 10,000 keys per call, 100,000 members per segment — split larger batches across multiple calls. For workspaces where list_workspaces reports requiresTitleAndComments: true, pass title and comment.",
     inputSchema: {
       environment_id: z.string().describe("The environment ID or name"),
       segment_name: z.string().describe("The segment name"),
@@ -1537,7 +1553,18 @@ server.registerTool(
         .describe(
           "Replace the segment's entire membership with these keys instead of appending — requires confirm: true",
         ),
-      comment: z.string().optional().describe("Optional change comment"),
+      title: z
+        .string()
+        .optional()
+        .describe(
+          "Change title. Required for workspaces with requiresTitleAndComments: true",
+        ),
+      comment: z
+        .string()
+        .optional()
+        .describe(
+          "Change comment. Required for workspaces with requiresTitleAndComments: true",
+        ),
       confirm: z
         .boolean()
         .default(false)
@@ -1551,11 +1578,23 @@ server.registerTool(
   "remove_segment_keys",
   {
     description:
-      "Remove specific member keys from a classic segment in an environment",
+      "Remove specific member keys from a classic segment in an environment. For workspaces where list_workspaces reports requiresTitleAndComments: true, pass title and comment.",
     inputSchema: {
       environment_id: z.string().describe("The environment ID or name"),
       segment_name: z.string().describe("The segment name"),
       keys: z.array(z.string()).describe("Member keys to remove"),
+      title: z
+        .string()
+        .optional()
+        .describe(
+          "Change title. Required for workspaces with requiresTitleAndComments: true",
+        ),
+      comment: z
+        .string()
+        .optional()
+        .describe(
+          "Change comment. Required for workspaces with requiresTitleAndComments: true",
+        ),
       confirm: z
         .boolean()
         .default(false)
