@@ -115,11 +115,12 @@ Leave them out and every other tool still works — `get_flag_url` just reports 
 
 The server reads these environment variables:
 
-| Variable                     | Required?    | Used by                                        |
-| ---------------------------- | ------------ | ---------------------------------------------- |
-| `MCP_HARNESS_FME_API_KEY`    | **Required** | Every tool — server exits at startup if absent |
-| `MCP_HARNESS_FME_ACCOUNT_ID` | Optional     | `get_flag_url` only                            |
-| `MCP_HARNESS_FME_ORG_GUID`   | Optional     | `get_flag_url` only                            |
+| Variable                     | Required?    | Used by                                                                                                                           |
+| ---------------------------- | ------------ | --------------------------------------------------------------------------------------------------------------------------------- |
+| `MCP_HARNESS_FME_API_KEY`    | **Required** | Every tool — server exits at startup if absent                                                                                    |
+| `HARNESS_FME_API_KEY`        | Alternative  | Read first when set, so one exported key also serves [`@kud/harness-fme-cli`](https://www.npmjs.com/package/@kud/harness-fme-cli) |
+| `MCP_HARNESS_FME_ACCOUNT_ID` | Optional     | `get_flag_url` only                                                                                                               |
+| `MCP_HARNESS_FME_ORG_GUID`   | Optional     | `get_flag_url` only                                                                                                               |
 
 The account ID and org GUID are Harness _platform_ identifiers that the API does not expose, so `get_flag_url` reads them from env. Grab them once from any flag's URL in the Harness FME web UI:
 
@@ -150,7 +151,7 @@ npm test              # vitest
 npm run build         # compile to dist/
 ```
 
-Environment variables are documented in [Configuration](#configuration) above. All tools are defined in `src/index.ts`.
+Environment variables are documented in [Configuration](#configuration) above. Tools are registered in `src/index.ts`; their handlers live in `src/tools.ts` and call [`@kud/harness-fme`](https://www.npmjs.com/package/@kud/harness-fme), the client library this server shares with the terminal tool [`@kud/harness-fme-cli`](https://www.npmjs.com/package/@kud/harness-fme-cli).
 
 ---
 

@@ -68,6 +68,19 @@ describe("listFeatureFlags", () => {
     expect(result.content[0].text).toContain("my-flag")
   })
 
+  it("asks for the page size with limit, which is what the API reads", async () => {
+    mockFetch.mockReturnValue(jsonResponse({ objects: [], totalCount: 0 }))
+    await api.listFeatureFlags({
+      workspace_id: "ws1",
+      limit: 50,
+      offset: 100,
+    })
+    const url = new URL(mockFetch.mock.calls[0][0] as string)
+    expect(url.searchParams.get("limit")).toBe("50")
+    expect(url.searchParams.get("offset")).toBe("100")
+    expect(url.searchParams.has("size")).toBe(false)
+  })
+
   it("includes tag filter in query when provided", async () => {
     mockFetch.mockReturnValue(jsonResponse({ objects: [], totalCount: 0 }))
     await api.listFeatureFlags({
