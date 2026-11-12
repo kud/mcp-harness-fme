@@ -4,6 +4,29 @@ All notable changes to this project are documented here.
 
 ---
 
+## [1.7.0] — 2026-11-12
+
+### Features
+
+- Tool handlers now run on the shared `@kud/harness-fme` client library, the same base as the new `@kud/harness-fme-cli` terminal tool, so both behave identically. The server also reports its real version to clients. ([8e008ca](https://github.com/kud/mcp-harness-fme/commit/8e008ca4667f1d666d98f56dc7975b2cf61449ae))
+- List tools now validate `limit` (1 to 50, or up to 100 for segment keys) and `offset` (whole numbers, at least 0), returning a clear error instead of an opaque API failure. ([327287e](https://github.com/kud/mcp-harness-fme/commit/327287e415e2faeb8c5619385e0c28f712624abb))
+
+### Fixes
+
+- List tools now send the page size as `limit`, which the API reads; it ignored `size`, so pages were silently capped at 20. ([327287e](https://github.com/kud/mcp-harness-fme/commit/327287e415e2faeb8c5619385e0c28f712624abb))
+- A successful write with an empty response body is no longer reported as a failure. ([8e008ca](https://github.com/kud/mcp-harness-fme/commit/8e008ca4667f1d666d98f56dc7975b2cf61449ae))
+- Names containing spaces or slashes are now URL-encoded, so they resolve instead of hitting the wrong path. ([8e008ca](https://github.com/kud/mcp-harness-fme/commit/8e008ca4667f1d666d98f56dc7975b2cf61449ae))
+- `get_flag_url` now finds workspaces beyond the first 50. ([8e008ca](https://github.com/kud/mcp-harness-fme/commit/8e008ca4667f1d666d98f56dc7975b2cf61449ae))
+
+<details>
+<summary>Internal (2 commits)</summary>
+
+- Added the `@kud/harness-fme` dependency and a project icon.
+
+</details>
+
+---
+
 ## [1.6.2] — 2026-09-23
 
 ### Fixes
