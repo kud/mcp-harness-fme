@@ -23,7 +23,7 @@ describe("listWorkspaces", () => {
     const result = await api.listWorkspaces({ limit: 20, offset: 0 })
     expect(result.content[0].text).toContain("ws1")
     expect(mockFetch).toHaveBeenCalledWith(
-      expect.stringContaining("/workspaces?size=20&offset=0"),
+      expect.stringContaining("/workspaces?limit=20&offset=0"),
       expect.any(Object),
     )
   })
@@ -937,7 +937,7 @@ describe("listSegmentKeys", () => {
     expect(result.content[0].text).toContain("user-1")
     expect(mockFetch).toHaveBeenCalledWith(
       expect.stringContaining(
-        "/segments/production/beta-users/keys?size=100&offset=0",
+        "/segments/production/beta-users/keys?limit=100&offset=0",
       ),
       expect.any(Object),
     )
@@ -1532,6 +1532,66 @@ describe("disableRuleBasedSegmentDefinition", () => {
       expect.stringContaining("/rule-based-segments/production/power-users"),
       expect.objectContaining({ method: "DELETE" }),
     )
+  })
+})
+
+// ─── List page size ───
+
+// The library sends `limit` for page size; the API ignores the legacy `size`
+// param. Pin every list tool so a regression back to `size` cannot land.
+describe("list tools request the page size with limit", () => {
+  it("list_workspaces sends limit", async () => {
+    mockFetch.mockReturnValue(jsonResponse({ objects: [], totalCount: 0 }))
+    await api.listWorkspaces({ limit: 20, offset: 0 })
+    const url = new URL(mockFetch.mock.calls[0][0] as string)
+    expect(url.searchParams.get("limit")).toBe("20")
+    expect(url.searchParams.has("size")).toBe(false)
+  })
+
+  it("list_segments sends limit", async () => {
+    mockFetch.mockReturnValue(jsonResponse({ objects: [], totalCount: 0 }))
+    await api.listSegments({ workspace_id: "ws1", limit: 20, offset: 0 })
+    const url = new URL(mockFetch.mock.calls[0][0] as string)
+    expect(url.searchParams.get("limit")).toBe("20")
+    expect(url.searchParams.has("size")).toBe(false)
+  })
+
+  it("list_segment_definitions sends limit", async () => {
+    mockFetch.mockReturnValue(jsonResponse({ objects: [], totalCount: 0 }))
+    await api.listSegmentDefinitions({
+      workspace_id: "ws1",
+      environment_id: "production",
+      limit: 20,
+      offset: 0,
+    })
+    const url = new URL(mockFetch.mock.calls[0][0] as string)
+    expect(url.searchParams.get("limit")).toBe("20")
+    expect(url.searchParams.has("size")).toBe(false)
+  })
+
+  it("list_segment_keys sends limit", async () => {
+    mockFetch.mockReturnValue(jsonResponse({ keys: [], count: 0 }))
+    await api.listSegmentKeys({
+      environment_id: "production",
+      segment_name: "beta-users",
+      limit: 100,
+      offset: 0,
+    })
+    const url = new URL(mockFetch.mock.calls[0][0] as string)
+    expect(url.searchParams.get("limit")).toBe("100")
+    expect(url.searchParams.has("size")).toBe(false)
+  })
+
+  it("list_rule_based_segments sends limit", async () => {
+    mockFetch.mockReturnValue(jsonResponse({ objects: [], totalCount: 0 }))
+    await api.listRuleBasedSegments({
+      workspace_id: "ws1",
+      limit: 20,
+      offset: 0,
+    })
+    const url = new URL(mockFetch.mock.calls[0][0] as string)
+    expect(url.searchParams.get("limit")).toBe("20")
+    expect(url.searchParams.has("size")).toBe(false)
   })
 })
 

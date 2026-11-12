@@ -43,6 +43,8 @@ import {
   updateFlagDefinition,
   updateRuleBasedSegmentDefinition,
 } from "./tools.js"
+import { limitField, offsetField } from "./schemas.js"
+import { readPackageVersion } from "./version.js"
 
 // The tool handlers live in ./tools.ts and are re-exported so tests (and any
 // other caller) can exercise them against a mocked fetch.
@@ -50,19 +52,20 @@ export * from "./tools.js"
 
 // ─── Server ───
 
-const server = new McpServer({ name: "mcp-harness-fme", version: "1.0.0" })
+export const serverVersion = readPackageVersion()
+
+export const server = new McpServer({
+  name: "mcp-harness-fme",
+  version: serverVersion,
+})
 
 server.registerTool(
   "list_workspaces",
   {
     description: "List all FME workspaces in the account",
     inputSchema: {
-      limit: z
-        .number()
-        .optional()
-        .default(20)
-        .describe("Number of results to return"),
-      offset: z.number().optional().default(0).describe("Pagination offset"),
+      limit: limitField(50, 20, "Number of results to return"),
+      offset: offsetField(),
     },
   },
   listWorkspaces,
@@ -85,12 +88,8 @@ server.registerTool(
     description: "List feature flags in a workspace",
     inputSchema: {
       workspace_id: z.string().describe("The workspace ID"),
-      limit: z
-        .number()
-        .optional()
-        .default(20)
-        .describe("Number of results to return (max 50)"),
-      offset: z.number().optional().default(0).describe("Pagination offset"),
+      limit: limitField(50, 20, "Number of results to return (max 50)"),
+      offset: offsetField(),
       tag: z
         .string()
         .optional()
@@ -236,12 +235,8 @@ server.registerTool(
     inputSchema: {
       workspace_id: z.string().describe("The workspace ID"),
       environment_id: z.string().describe("The environment ID or name"),
-      limit: z
-        .number()
-        .optional()
-        .default(20)
-        .describe("Number of results to return (max 50)"),
-      offset: z.number().optional().default(0).describe("Pagination offset"),
+      limit: limitField(50, 20, "Number of results to return (max 50)"),
+      offset: offsetField(),
       summary: z
         .boolean()
         .optional()
@@ -386,14 +381,8 @@ server.registerTool(
     description: "List all segments in a workspace",
     inputSchema: {
       workspace_id: z.string().describe("The workspace ID"),
-      limit: z
-        .number()
-        .optional()
-        .default(20)
-        .describe(
-          "Requested page size. Note: the Harness FME API caps segment pages at 20 — higher values are ignored and at most 20 objects are returned per call. Use offset to page through the rest.",
-        ),
-      offset: z.number().optional().default(0).describe("Pagination offset"),
+      limit: limitField(50, 20, "Number of results to return (max 50)"),
+      offset: offsetField(),
     },
   },
   listSegments,
@@ -407,12 +396,8 @@ server.registerTool(
     inputSchema: {
       workspace_id: z.string().describe("The workspace ID"),
       environment_id: z.string().describe("The environment ID or name"),
-      limit: z
-        .number()
-        .optional()
-        .default(20)
-        .describe("Number of results to return (max 50)"),
-      offset: z.number().optional().default(0).describe("Pagination offset"),
+      limit: limitField(50, 20, "Number of results to return (max 50)"),
+      offset: offsetField(),
     },
   },
   listSegmentDefinitions,
@@ -426,12 +411,8 @@ server.registerTool(
     inputSchema: {
       environment_id: z.string().describe("The environment ID or name"),
       segment_name: z.string().describe("The segment name"),
-      limit: z
-        .number()
-        .optional()
-        .default(100)
-        .describe("Number of keys to return (max 100)"),
-      offset: z.number().optional().default(0).describe("Pagination offset"),
+      limit: limitField(100, 100, "Number of keys to return (max 100)"),
+      offset: offsetField(),
     },
   },
   listSegmentKeys,
@@ -631,12 +612,8 @@ server.registerTool(
     description: "List all rule-based segments in a workspace",
     inputSchema: {
       workspace_id: z.string().describe("The workspace ID"),
-      limit: z
-        .number()
-        .optional()
-        .default(20)
-        .describe("Number of results to return"),
-      offset: z.number().optional().default(0).describe("Pagination offset"),
+      limit: limitField(50, 20, "Number of results to return"),
+      offset: offsetField(),
     },
   },
   listRuleBasedSegments,
