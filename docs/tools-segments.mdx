@@ -19,7 +19,7 @@ List all rule-based segments in a workspace.
 
 | Argument       | Type   | Default | Description                 |
 | -------------- | ------ | ------- | --------------------------- |
-| `workspace_id` | string | —       | The workspace ID            |
+| `workspace_id` | string | —       | The workspace ID or name    |
 | `limit`        | number | `20`    | Number of results to return |
 | `offset`       | number | `0`     | Pagination offset           |
 
@@ -27,10 +27,10 @@ List all rule-based segments in a workspace.
 
 Get a rule-based segment's workspace-level metadata by name.
 
-| Argument       | Type   | Description      |
-| -------------- | ------ | ---------------- |
-| `workspace_id` | string | The workspace ID |
-| `segment_name` | string | The segment name |
+| Argument       | Type   | Description              |
+| -------------- | ------ | ------------------------ |
+| `workspace_id` | string | The workspace ID or name |
+| `segment_name` | string | The segment name         |
 
 ### `create_rule_based_segment`
 
@@ -38,7 +38,7 @@ Create a new rule-based segment in a workspace under a specific traffic type.
 
 | Argument       | Type   | Description                             |
 | -------------- | ------ | --------------------------------------- |
-| `workspace_id` | string | The workspace ID                        |
+| `workspace_id` | string | The workspace ID or name                |
 | `traffic_type` | string | The traffic type ID or name             |
 | `name`         | string | The segment name (unique per workspace) |
 | `description`  | string | Optional description                    |
@@ -50,7 +50,7 @@ must be removed separately.
 
 | Argument       | Type    | Default | Description               |
 | -------------- | ------- | ------- | ------------------------- |
-| `workspace_id` | string  | —       | The workspace ID          |
+| `workspace_id` | string  | —       | The workspace ID or name  |
 | `segment_name` | string  | —       | The segment name          |
 | `confirm`      | boolean | `false` | Must be `true` to execute |
 
@@ -62,7 +62,7 @@ List rule-based segment definitions in a specific environment.
 
 | Argument         | Type   | Description                |
 | ---------------- | ------ | -------------------------- |
-| `workspace_id`   | string | The workspace ID           |
+| `workspace_id`   | string | The workspace ID or name   |
 | `environment_id` | string | The environment ID or name |
 
 ### `enable_rule_based_segment_definition`
@@ -72,7 +72,7 @@ definition that you can then configure via `update_rule_based_segment_definition
 
 | Argument         | Type   | Description                |
 | ---------------- | ------ | -------------------------- |
-| `workspace_id`   | string | The workspace ID           |
+| `workspace_id`   | string | The workspace ID or name   |
 | `environment_id` | string | The environment ID or name |
 | `segment_name`   | string | The segment name           |
 
@@ -83,7 +83,7 @@ matchers).
 
 | Argument         | Type   | Description                                                                             |
 | ---------------- | ------ | --------------------------------------------------------------------------------------- |
-| `workspace_id`   | string | The workspace ID                                                                        |
+| `workspace_id`   | string | The workspace ID or name                                                                |
 | `environment_id` | string | The environment ID or name                                                              |
 | `segment_name`   | string | The segment name                                                                        |
 | `definition`     | string | Full definition as a JSON string — includes `rules`, `excludedKeys`, `excludedSegments` |
@@ -95,7 +95,7 @@ metadata is preserved.
 
 | Argument         | Type    | Default | Description                |
 | ---------------- | ------- | ------- | -------------------------- |
-| `workspace_id`   | string  | —       | The workspace ID           |
+| `workspace_id`   | string  | —       | The workspace ID or name   |
 | `environment_id` | string  | —       | The environment ID or name |
 | `segment_name`   | string  | —       | The segment name           |
 | `confirm`        | boolean | `false` | Must be `true` to execute  |
@@ -110,7 +110,7 @@ segment changes ship.
 
 | Argument             | Type   | Description                                      |
 | -------------------- | ------ | ------------------------------------------------ |
-| `workspace_id`       | string | The workspace ID                                 |
+| `workspace_id`       | string | The workspace ID or name                         |
 | `environment_id`     | string | The environment ID or name                       |
 | `title`              | string | Change request title                             |
 | `operation_type`     | string | Change operation type (e.g. `UPDATE`)            |
@@ -126,6 +126,6 @@ List all (standard) segments in a workspace.
 
 | Argument       | Type   | Default | Description                 |
 | -------------- | ------ | ------- | --------------------------- |
-| `workspace_id` | string | —       | The workspace ID            |
+| `workspace_id` | string | —       | The workspace ID or name    |
 | `limit`        | number | `20`    | Number of results to return |
 | `offset`       | number | `0`     | Pagination offset           |

@@ -9,7 +9,7 @@ and, separately, a **per-environment definition** (treatments and targeting
 rules). The tools below mirror that split: some operate on the flag itself, others
 on its definition in a given environment.
 
-> All tools take a `workspace_id`. Discover IDs with the
+> All tools take a `workspace_id`, as an ID or a name. Discover them with the
 > [workspace & environment tools](/projects/mcp-harness-fme/docs/tools-workspaces-environments).
 
 ## 🏷️ Flag metadata
@@ -20,7 +20,7 @@ List feature flags in a workspace.
 
 | Argument            | Type   | Default | Description                                                 |
 | ------------------- | ------ | ------- | ----------------------------------------------------------- |
-| `workspace_id`      | string | —       | The workspace ID                                            |
+| `workspace_id`      | string | —       | The workspace ID or name                                    |
 | `limit`             | number | `20`    | Number of results to return (max 50)                        |
 | `offset`            | number | `0`     | Pagination offset                                           |
 | `tag`               | string | —       | Filter flags by tag (e.g. `Mobile Suite`)                   |
@@ -29,12 +29,13 @@ List feature flags in a workspace.
 
 ### `get_feature_flag`
 
-Get metadata for a specific feature flag.
+Get metadata for a specific feature flag. Owners come back with their display
+names beside their IDs (`name: null` when the API will not say).
 
-| Argument       | Type   | Description           |
-| -------------- | ------ | --------------------- |
-| `workspace_id` | string | The workspace ID      |
-| `flag_name`    | string | The feature flag name |
+| Argument       | Type   | Description              |
+| -------------- | ------ | ------------------------ |
+| `workspace_id` | string | The workspace ID or name |
+| `flag_name`    | string | The feature flag name    |
 
 ### `create_feature_flag`
 
@@ -42,7 +43,7 @@ Create a new feature flag for a given traffic type.
 
 | Argument       | Type   | Description                               |
 | -------------- | ------ | ----------------------------------------- |
-| `workspace_id` | string | The workspace ID                          |
+| `workspace_id` | string | The workspace ID or name                  |
 | `traffic_type` | string | The traffic type ID or name (e.g. `user`) |
 | `name`         | string | The flag name (unique per workspace)      |
 | `description`  | string | Optional description                      |
@@ -54,7 +55,7 @@ JSON Patch). Provide at least one field.
 
 | Argument            | Type   | Description                                               |
 | ------------------- | ------ | --------------------------------------------------------- |
-| `workspace_id`      | string | The workspace ID                                          |
+| `workspace_id`      | string | The workspace ID or name                                  |
 | `flag_name`         | string | The feature flag name                                     |
 | `description`       | string | New description                                           |
 | `tags`              | array  | Tags to set — `{ name: string }` objects or plain strings |
@@ -67,7 +68,7 @@ Permanently delete a feature flag from a workspace. **Irreversible.**
 
 | Argument       | Type    | Default | Description               |
 | -------------- | ------- | ------- | ------------------------- |
-| `workspace_id` | string  | —       | The workspace ID          |
+| `workspace_id` | string  | —       | The workspace ID or name  |
 | `flag_name`    | string  | —       | The feature flag name     |
 | `confirm`      | boolean | `false` | Must be `true` to execute |
 
@@ -78,7 +79,7 @@ OPA policy checks (returns 409 on failure).
 
 | Argument       | Type    | Default | Description               |
 | -------------- | ------- | ------- | ------------------------- |
-| `workspace_id` | string  | —       | The workspace ID          |
+| `workspace_id` | string  | —       | The workspace ID or name  |
 | `flag_name`    | string  | —       | The feature flag name     |
 | `confirm`      | boolean | `false` | Must be `true` to execute |
 
@@ -86,10 +87,10 @@ OPA policy checks (returns 409 on failure).
 
 Unarchive a previously archived flag, restoring it to active use.
 
-| Argument       | Type   | Description           |
-| -------------- | ------ | --------------------- |
-| `workspace_id` | string | The workspace ID      |
-| `flag_name`    | string | The feature flag name |
+| Argument       | Type   | Description              |
+| -------------- | ------ | ------------------------ |
+| `workspace_id` | string | The workspace ID or name |
+| `flag_name`    | string | The feature flag name    |
 
 ## 🔌 Kill switch
 
@@ -100,7 +101,7 @@ treatment. This is the fast, reversible emergency switch.
 
 | Argument         | Type    | Default | Description                |
 | ---------------- | ------- | ------- | -------------------------- |
-| `workspace_id`   | string  | —       | The workspace ID           |
+| `workspace_id`   | string  | —       | The workspace ID or name   |
 | `environment_id` | string  | —       | The environment ID or name |
 | `flag_name`      | string  | —       | The feature flag name      |
 | `confirm`        | boolean | `false` | Must be `true` to execute  |
@@ -112,7 +113,7 @@ routing.
 
 | Argument         | Type   | Description                |
 | ---------------- | ------ | -------------------------- |
-| `workspace_id`   | string | The workspace ID           |
+| `workspace_id`   | string | The workspace ID or name   |
 | `environment_id` | string | The environment ID or name |
 | `flag_name`      | string | The feature flag name      |
 
@@ -127,7 +128,7 @@ List all flag definitions (targeting rules) in a specific environment.
 
 | Argument         | Type   | Default | Description                          |
 | ---------------- | ------ | ------- | ------------------------------------ |
-| `workspace_id`   | string | —       | The workspace ID                     |
+| `workspace_id`   | string | —       | The workspace ID or name             |
 | `environment_id` | string | —       | The environment ID or name           |
 | `limit`          | number | `20`    | Number of results to return (max 50) |
 | `offset`         | number | `0`     | Pagination offset                    |
@@ -139,9 +140,45 @@ environment.
 
 | Argument         | Type   | Description                |
 | ---------------- | ------ | -------------------------- |
-| `workspace_id`   | string | The workspace ID           |
+| `workspace_id`   | string | The workspace ID or name   |
 | `environment_id` | string | The environment ID or name |
 | `flag_name`      | string | The feature flag name      |
+
+### `compare_flag_environments`
+
+Read one flag in every environment, or the ones named, side by side: whether it
+is defined, killed, the default treatment and rule, traffic allocation,
+treatments with their key counts and segments, the targeting rules, and the last
+update with its ISO time. `differences` lists the fields that are not the same
+everywhere; treatments compare on their full membership, so equal counts with
+different keys still differ.
+
+| Argument       | Type     | Description                                        |
+| -------------- | -------- | -------------------------------------------------- |
+| `workspace_id` | string   | The workspace ID or name                           |
+| `flag_name`    | string   | The feature flag name                              |
+| `environments` | string[] | Environment names or IDs to compare (default: all) |
+
+### `get_flag_history`
+
+A flag's change history in one environment, newest first: time (with ISO),
+title, change type, approvers, edited by and status (the columns of the web UI's
+audit log), then the default rule before and after and a field-level diff
+against the previous change.
+
+The admin API has no audit log, and past definitions cannot be fetched by
+`changeNumber`. This reads the flag's change requests, each carrying the
+definition it proposed. A change made without an approval flow is not recorded
+by the API and does not appear. It needs an API key with access to change
+requests; a key restricted to environments gets a 401.
+
+| Argument         | Type   | Description                                   |
+| ---------------- | ------ | --------------------------------------------- |
+| `workspace_id`   | string | The workspace ID or name                      |
+| `environment_id` | string | The environment ID or name                    |
+| `flag_name`      | string | The feature flag name                         |
+| `status`         | string | Change request status (default `PUBLISHED`)   |
+| `limit`          | number | Most changes to return, 1 to 100 (default 20) |
 
 ### `create_flag_definition`
 
@@ -150,7 +187,7 @@ targeting rules.
 
 | Argument         | Type   | Description                                                                    |
 | ---------------- | ------ | ------------------------------------------------------------------------------ |
-| `workspace_id`   | string | The workspace ID                                                               |
+| `workspace_id`   | string | The workspace ID or name                                                       |
 | `environment_id` | string | The environment ID or name                                                     |
 | `flag_name`      | string | The feature flag name                                                          |
 | `definition`     | string | Full definition as a JSON string — must include `treatments` and `defaultRule` |
@@ -161,7 +198,7 @@ Fully replace a flag definition (treatments, targeting rules) in an environment.
 
 | Argument         | Type   | Description                                                              |
 | ---------------- | ------ | ------------------------------------------------------------------------ |
-| `workspace_id`   | string | The workspace ID                                                         |
+| `workspace_id`   | string | The workspace ID or name                                                 |
 | `environment_id` | string | The environment ID or name                                               |
 | `flag_name`      | string | The feature flag name                                                    |
 | `definition`     | string | Complete updated definition as a JSON string — replaces the existing one |
@@ -173,7 +210,7 @@ its targeting rules in that environment.
 
 | Argument         | Type    | Default | Description                |
 | ---------------- | ------- | ------- | -------------------------- |
-| `workspace_id`   | string  | —       | The workspace ID           |
+| `workspace_id`   | string  | —       | The workspace ID or name   |
 | `environment_id` | string  | —       | The environment ID or name |
 | `flag_name`      | string  | —       | The feature flag name      |
 | `confirm`        | boolean | `false` | Must be `true` to execute  |
@@ -187,6 +224,6 @@ _Ramping_, _Pre-Production_). Use the returned UUIDs to filter flags via
 `list_feature_flags`'s `rollout_status_id` argument or to set one with
 `update_feature_flag`.
 
-| Argument       | Type   | Description      |
-| -------------- | ------ | ---------------- |
-| `workspace_id` | string | The workspace ID |
+| Argument       | Type   | Description              |
+| -------------- | ------ | ------------------------ |
+| `workspace_id` | string | The workspace ID or name |
