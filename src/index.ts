@@ -21,6 +21,8 @@ import {
   enableRuleBasedSegmentDefinition,
   enableSegmentInEnvironment,
   getFeatureFlag,
+  compareFlagEnvironments,
+  getFlagHistory,
   getFlagDefinition,
   getFlagUrl,
   getRuleBasedSegment,
@@ -76,7 +78,7 @@ server.registerTool(
   {
     description: "List all environments in a workspace",
     inputSchema: {
-      workspace_id: z.string().describe("The workspace ID"),
+      workspace_id: z.string().describe("The workspace ID or name"),
     },
   },
   listEnvironments,
@@ -87,7 +89,7 @@ server.registerTool(
   {
     description: "List feature flags in a workspace",
     inputSchema: {
-      workspace_id: z.string().describe("The workspace ID"),
+      workspace_id: z.string().describe("The workspace ID or name"),
       limit: limitField(50, 20, "Number of results to return (max 50)"),
       offset: offsetField(),
       tag: z
@@ -112,9 +114,10 @@ server.registerTool(
 server.registerTool(
   "get_feature_flag",
   {
-    description: "Get metadata for a specific feature flag",
+    description:
+      "Get metadata for a specific feature flag, owners resolved to names (ids kept)",
     inputSchema: {
-      workspace_id: z.string().describe("The workspace ID"),
+      workspace_id: z.string().describe("The workspace ID or name"),
       flag_name: z.string().describe("The feature flag name"),
     },
   },
@@ -127,7 +130,7 @@ server.registerTool(
     description:
       "Get the targeting rules and treatment definition of a feature flag in a specific environment",
     inputSchema: {
-      workspace_id: z.string().describe("The workspace ID"),
+      workspace_id: z.string().describe("The workspace ID or name"),
       environment_id: z.string().describe("The environment ID or name"),
       flag_name: z.string().describe("The feature flag name"),
     },
@@ -136,12 +139,65 @@ server.registerTool(
 )
 
 server.registerTool(
+  "compare_flag_environments",
+  {
+    description:
+      "Read one flag in every environment (or the ones named) side by side: whether it is defined, killed, default treatment and rule, traffic allocation, treatments with key counts and segments, targeting rules and last update (with ISO time). `differences` lists the fields that are not the same everywhere.",
+    inputSchema: {
+      workspace_id: z.string().describe("The workspace ID or name"),
+      flag_name: z.string().describe("The feature flag name"),
+      environments: z
+        .array(z.string())
+        .optional()
+        .describe("Environment names or IDs to compare (default: all)"),
+    },
+  },
+  compareFlagEnvironments,
+)
+
+server.registerTool(
+  "get_flag_history",
+  {
+    description:
+      "A flag's change history in one environment, newest first: time (ISO), title, change type, approvers, edited by, status, the default rule before and after, and a field-level diff against the previous change. Built from change requests, as the admin API has no audit log: changes made without an approval flow do not appear. Needs a key with access to change requests.",
+    inputSchema: {
+      workspace_id: z.string().describe("The workspace ID or name"),
+      environment_id: z.string().describe("The environment ID or name"),
+      flag_name: z.string().describe("The feature flag name"),
+      status: z
+        .enum([
+          "PUBLISHED",
+          "REQUESTED",
+          "SCHEDULE_REQUESTED",
+          "APPROVED",
+          "REJECTED",
+          "WITHDRAWN",
+        ])
+        .optional()
+        .default("PUBLISHED")
+        .describe(
+          "Change request status to read (default PUBLISHED: changes that reached the flag)",
+        ),
+      limit: z
+        .number()
+        .int()
+        .min(1)
+        .max(100)
+        .optional()
+        .default(20)
+        .describe("Most changes to return"),
+    },
+  },
+  getFlagHistory,
+)
+
+server.registerTool(
   "kill_feature_flag",
   {
     description:
       "Kill (disable) a feature flag in an environment — forces all traffic to the default treatment",
     inputSchema: {
-      workspace_id: z.string().describe("The workspace ID"),
+      workspace_id: z.string().describe("The workspace ID or name"),
       environment_id: z.string().describe("The environment ID or name"),
       flag_name: z.string().describe("The feature flag name"),
       confirm: z
@@ -158,7 +214,7 @@ server.registerTool(
   {
     description: "Restore (re-enable) a killed feature flag in an environment",
     inputSchema: {
-      workspace_id: z.string().describe("The workspace ID"),
+      workspace_id: z.string().describe("The workspace ID or name"),
       environment_id: z.string().describe("The environment ID or name"),
       flag_name: z.string().describe("The feature flag name"),
     },
@@ -171,7 +227,7 @@ server.registerTool(
   {
     description: "Create a new feature flag for a given traffic type",
     inputSchema: {
-      workspace_id: z.string().describe("The workspace ID"),
+      workspace_id: z.string().describe("The workspace ID or name"),
       traffic_type: z
         .string()
         .describe("The traffic type ID or name (e.g. 'user')"),
@@ -188,7 +244,7 @@ server.registerTool(
     description:
       "Update a feature flag's description, tags, or owners (partial update)",
     inputSchema: {
-      workspace_id: z.string().describe("The workspace ID"),
+      workspace_id: z.string().describe("The workspace ID or name"),
       flag_name: z.string().describe("The feature flag name"),
       description: z.string().optional().describe("New description"),
       tags: z
@@ -216,7 +272,7 @@ server.registerTool(
     description:
       "Permanently delete a feature flag from a workspace — irreversible",
     inputSchema: {
-      workspace_id: z.string().describe("The workspace ID"),
+      workspace_id: z.string().describe("The workspace ID or name"),
       flag_name: z.string().describe("The feature flag name"),
       confirm: z
         .boolean()
@@ -233,7 +289,7 @@ server.registerTool(
     description:
       "List all feature flag definitions (targeting rules) in a specific environment. Full definitions are large; pass summary: true to get name/id only when you just need to locate a flag.",
     inputSchema: {
-      workspace_id: z.string().describe("The workspace ID"),
+      workspace_id: z.string().describe("The workspace ID or name"),
       environment_id: z.string().describe("The environment ID or name"),
       limit: limitField(50, 20, "Number of results to return (max 50)"),
       offset: offsetField(),
@@ -271,7 +327,7 @@ server.registerTool(
     description:
       "Add a segment to a specific treatment of a feature flag via read-modify-write — safer than update_flag_definition's full replace, where a dropped field silently removes existing targeting. Idempotent: a no-op if the segment is already on the treatment. For workspaces where list_workspaces reports requiresTitleAndComments: true, pass title (and comment).",
     inputSchema: {
-      workspace_id: z.string().describe("The workspace ID"),
+      workspace_id: z.string().describe("The workspace ID or name"),
       environment_id: z.string().describe("The environment ID or name"),
       flag_name: z.string().describe("The feature flag name"),
       treatment: z
@@ -301,7 +357,7 @@ server.registerTool(
     description:
       "Create (activate) a feature flag definition in a specific environment with treatments and targeting rules. For workspaces where list_workspaces reports requiresTitleAndComments: true, pass title (and comment) or the API rejects the write with a 400.",
     inputSchema: {
-      workspace_id: z.string().describe("The workspace ID"),
+      workspace_id: z.string().describe("The workspace ID or name"),
       environment_id: z.string().describe("The environment ID or name"),
       flag_name: z.string().describe("The feature flag name"),
       definition: z
@@ -332,7 +388,7 @@ server.registerTool(
     description:
       "Fully replace a feature flag definition (treatments, targeting rules) in an environment. For workspaces where list_workspaces reports requiresTitleAndComments: true, pass title (and comment) or the API rejects the write with a 400.",
     inputSchema: {
-      workspace_id: z.string().describe("The workspace ID"),
+      workspace_id: z.string().describe("The workspace ID or name"),
       environment_id: z.string().describe("The environment ID or name"),
       flag_name: z.string().describe("The feature flag name"),
       definition: z
@@ -363,7 +419,7 @@ server.registerTool(
     description:
       "Remove a feature flag definition from an environment — the flag itself remains, but loses its targeting rules in that environment",
     inputSchema: {
-      workspace_id: z.string().describe("The workspace ID"),
+      workspace_id: z.string().describe("The workspace ID or name"),
       environment_id: z.string().describe("The environment ID or name"),
       flag_name: z.string().describe("The feature flag name"),
       confirm: z
@@ -380,7 +436,7 @@ server.registerTool(
   {
     description: "List all segments in a workspace",
     inputSchema: {
-      workspace_id: z.string().describe("The workspace ID"),
+      workspace_id: z.string().describe("The workspace ID or name"),
       limit: limitField(50, 20, "Number of results to return (max 50)"),
       offset: offsetField(),
     },
@@ -394,7 +450,7 @@ server.registerTool(
     description:
       "List classic segments activated in a specific environment, with their traffic type and creation time",
     inputSchema: {
-      workspace_id: z.string().describe("The workspace ID"),
+      workspace_id: z.string().describe("The workspace ID or name"),
       environment_id: z.string().describe("The environment ID or name"),
       limit: limitField(50, 20, "Number of results to return (max 50)"),
       offset: offsetField(),
@@ -424,7 +480,7 @@ server.registerTool(
     description:
       "Create a new classic (explicit-membership) segment in a workspace under a specific traffic type",
     inputSchema: {
-      workspace_id: z.string().describe("The workspace ID"),
+      workspace_id: z.string().describe("The workspace ID or name"),
       traffic_type: z.string().describe("The traffic type ID or name"),
       name: z.string().describe("The segment name (unique per workspace)"),
       description: z.string().optional().describe("Optional description"),
@@ -542,7 +598,7 @@ server.registerTool(
     description:
       "Permanently delete a classic segment from a workspace — environment-level activations must be removed separately first",
     inputSchema: {
-      workspace_id: z.string().describe("The workspace ID"),
+      workspace_id: z.string().describe("The workspace ID or name"),
       segment_name: z.string().describe("The segment name"),
       confirm: z
         .boolean()
@@ -558,7 +614,7 @@ server.registerTool(
   {
     description: "List all traffic types in a workspace",
     inputSchema: {
-      workspace_id: z.string().describe("The workspace ID"),
+      workspace_id: z.string().describe("The workspace ID or name"),
     },
   },
   listTrafficTypes,
@@ -570,7 +626,7 @@ server.registerTool(
     description:
       "List rollout status definitions for a workspace (e.g. Killed, Permanent, Ramping) — use the returned IDs to filter feature flags by rollout status",
     inputSchema: {
-      workspace_id: z.string().describe("The workspace ID"),
+      workspace_id: z.string().describe("The workspace ID or name"),
     },
   },
   listRolloutStatuses,
@@ -582,7 +638,7 @@ server.registerTool(
     description:
       "Archive a feature flag — removes it from active use while preserving history. Subject to OPA policy checks (409 on failure).",
     inputSchema: {
-      workspace_id: z.string().describe("The workspace ID"),
+      workspace_id: z.string().describe("The workspace ID or name"),
       flag_name: z.string().describe("The feature flag name"),
       confirm: z
         .boolean()
@@ -599,7 +655,7 @@ server.registerTool(
     description:
       "Unarchive a previously archived feature flag, restoring it to active use",
     inputSchema: {
-      workspace_id: z.string().describe("The workspace ID"),
+      workspace_id: z.string().describe("The workspace ID or name"),
       flag_name: z.string().describe("The feature flag name"),
     },
   },
@@ -611,7 +667,7 @@ server.registerTool(
   {
     description: "List all rule-based segments in a workspace",
     inputSchema: {
-      workspace_id: z.string().describe("The workspace ID"),
+      workspace_id: z.string().describe("The workspace ID or name"),
       limit: limitField(50, 20, "Number of results to return"),
       offset: offsetField(),
     },
@@ -624,7 +680,7 @@ server.registerTool(
   {
     description: "Get a rule-based segment's workspace-level metadata by name",
     inputSchema: {
-      workspace_id: z.string().describe("The workspace ID"),
+      workspace_id: z.string().describe("The workspace ID or name"),
       segment_name: z.string().describe("The segment name"),
     },
   },
@@ -637,7 +693,7 @@ server.registerTool(
     description:
       "Create a new rule-based segment in a workspace under a specific traffic type",
     inputSchema: {
-      workspace_id: z.string().describe("The workspace ID"),
+      workspace_id: z.string().describe("The workspace ID or name"),
       traffic_type: z.string().describe("The traffic type ID or name"),
       name: z.string().describe("The segment name (unique per workspace)"),
       description: z.string().optional().describe("Optional description"),
@@ -652,7 +708,7 @@ server.registerTool(
     description:
       "Permanently delete a rule-based segment from a workspace — environment-level configs must be removed separately",
     inputSchema: {
-      workspace_id: z.string().describe("The workspace ID"),
+      workspace_id: z.string().describe("The workspace ID or name"),
       segment_name: z.string().describe("The segment name"),
       confirm: z
         .boolean()
@@ -669,7 +725,7 @@ server.registerTool(
     description:
       "List rule-based segment definitions in a specific environment",
     inputSchema: {
-      workspace_id: z.string().describe("The workspace ID"),
+      workspace_id: z.string().describe("The workspace ID or name"),
       environment_id: z.string().describe("The environment ID or name"),
     },
   },
@@ -682,7 +738,7 @@ server.registerTool(
     description:
       "Update a rule-based segment definition in an environment (rules, exclusions, matchers)",
     inputSchema: {
-      workspace_id: z.string().describe("The workspace ID"),
+      workspace_id: z.string().describe("The workspace ID or name"),
       environment_id: z.string().describe("The environment ID or name"),
       segment_name: z.string().describe("The segment name"),
       definition: z
@@ -701,7 +757,7 @@ server.registerTool(
     description:
       "Enable (activate) a rule-based segment in a specific environment — creates an empty definition that can then be configured via update",
     inputSchema: {
-      workspace_id: z.string().describe("The workspace ID"),
+      workspace_id: z.string().describe("The workspace ID or name"),
       environment_id: z.string().describe("The environment ID or name"),
       segment_name: z.string().describe("The segment name"),
     },
@@ -715,7 +771,7 @@ server.registerTool(
     description:
       "Disable (remove) a rule-based segment from a specific environment — workspace-level metadata is preserved",
     inputSchema: {
-      workspace_id: z.string().describe("The workspace ID"),
+      workspace_id: z.string().describe("The workspace ID or name"),
       environment_id: z.string().describe("The environment ID or name"),
       segment_name: z.string().describe("The segment name"),
       confirm: z
@@ -733,7 +789,7 @@ server.registerTool(
     description:
       "Submit a change request for a rule-based segment definition — supports approval flow via approvers",
     inputSchema: {
-      workspace_id: z.string().describe("The workspace ID"),
+      workspace_id: z.string().describe("The workspace ID or name"),
       environment_id: z.string().describe("The environment ID or name"),
       title: z.string().describe("Change request title"),
       operation_type: z

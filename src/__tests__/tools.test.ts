@@ -18,10 +18,10 @@ const errorResponse = (status = 500) => Promise.resolve({ ok: false, status })
 describe("listWorkspaces", () => {
   it("returns workspaces on success", async () => {
     mockFetch.mockReturnValue(
-      jsonResponse({ objects: [{ id: "ws1" }], totalCount: 1 }),
+      jsonResponse({ objects: [{ id: "11111111-2222-4333-8444-555555555555" }], totalCount: 1 }),
     )
     const result = await api.listWorkspaces({ limit: 20, offset: 0 })
-    expect(result.content[0].text).toContain("ws1")
+    expect(result.content[0].text).toContain("11111111-2222-4333-8444-555555555555")
     expect(mockFetch).toHaveBeenCalledWith(
       expect.stringContaining("/workspaces?limit=20&offset=0"),
       expect.any(Object),
@@ -42,13 +42,13 @@ describe("listEnvironments", () => {
     mockFetch.mockReturnValue(
       jsonResponse({ objects: [{ name: "production" }] }),
     )
-    const result = await api.listEnvironments({ workspace_id: "ws1" })
+    const result = await api.listEnvironments({ workspace_id: "11111111-2222-4333-8444-555555555555" })
     expect(result.content[0].text).toContain("production")
   })
 
   it("returns error when fetch fails", async () => {
     mockFetch.mockReturnValue(errorResponse())
-    const result = await api.listEnvironments({ workspace_id: "ws1" })
+    const result = await api.listEnvironments({ workspace_id: "11111111-2222-4333-8444-555555555555" })
     expect(result.content[0].text).toContain("Error:")
   })
 })
@@ -61,7 +61,7 @@ describe("listFeatureFlags", () => {
       jsonResponse({ objects: [{ name: "my-flag" }], totalCount: 1 }),
     )
     const result = await api.listFeatureFlags({
-      workspace_id: "ws1",
+      workspace_id: "11111111-2222-4333-8444-555555555555",
       limit: 20,
       offset: 0,
     })
@@ -71,7 +71,7 @@ describe("listFeatureFlags", () => {
   it("asks for the page size with limit, which is what the API reads", async () => {
     mockFetch.mockReturnValue(jsonResponse({ objects: [], totalCount: 0 }))
     await api.listFeatureFlags({
-      workspace_id: "ws1",
+      workspace_id: "11111111-2222-4333-8444-555555555555",
       limit: 50,
       offset: 100,
     })
@@ -84,7 +84,7 @@ describe("listFeatureFlags", () => {
   it("includes tag filter in query when provided", async () => {
     mockFetch.mockReturnValue(jsonResponse({ objects: [], totalCount: 0 }))
     await api.listFeatureFlags({
-      workspace_id: "ws1",
+      workspace_id: "11111111-2222-4333-8444-555555555555",
       limit: 20,
       offset: 0,
       tag: "Mobile Suite",
@@ -98,7 +98,7 @@ describe("listFeatureFlags", () => {
   it("returns error when fetch fails", async () => {
     mockFetch.mockReturnValue(errorResponse())
     const result = await api.listFeatureFlags({
-      workspace_id: "ws1",
+      workspace_id: "11111111-2222-4333-8444-555555555555",
       limit: 20,
       offset: 0,
     })
@@ -110,7 +110,7 @@ describe("getFeatureFlag", () => {
   it("returns flag on success", async () => {
     mockFetch.mockReturnValue(jsonResponse({ name: "my-flag", id: "abc" }))
     const result = await api.getFeatureFlag({
-      workspace_id: "ws1",
+      workspace_id: "11111111-2222-4333-8444-555555555555",
       flag_name: "my-flag",
     })
     expect(result.content[0].text).toContain("my-flag")
@@ -119,7 +119,7 @@ describe("getFeatureFlag", () => {
   it("returns error when fetch fails", async () => {
     mockFetch.mockReturnValue(errorResponse())
     const result = await api.getFeatureFlag({
-      workspace_id: "ws1",
+      workspace_id: "11111111-2222-4333-8444-555555555555",
       flag_name: "my-flag",
     })
     expect(result.content[0].text).toContain("Error:")
@@ -131,13 +131,13 @@ describe("getFlagDefinition", () => {
   it("returns definition on success", async () => {
     mockFetch.mockReturnValue(jsonResponse({ treatments: ["on", "off"] }))
     const result = await api.getFlagDefinition({
-      workspace_id: "ws1",
+      workspace_id: "11111111-2222-4333-8444-555555555555",
       environment_id: "production",
       flag_name: "my-flag",
     })
     expect(result.content[0].text).toContain("on")
     expect(mockFetch).toHaveBeenCalledWith(
-      expect.stringContaining("/splits/ws/ws1/my-flag/environments/production"),
+      expect.stringContaining("/splits/ws/11111111-2222-4333-8444-555555555555/my-flag/environments/production"),
       expect.any(Object),
     )
   })
@@ -145,7 +145,7 @@ describe("getFlagDefinition", () => {
   it("returns error when fetch fails", async () => {
     mockFetch.mockReturnValue(errorResponse())
     const result = await api.getFlagDefinition({
-      workspace_id: "ws1",
+      workspace_id: "11111111-2222-4333-8444-555555555555",
       environment_id: "production",
       flag_name: "my-flag",
     })
@@ -280,7 +280,7 @@ describe("getFlagUrl", () => {
 describe("killFeatureFlag", () => {
   it("blocks execution without confirm", async () => {
     const result = await api.killFeatureFlag({
-      workspace_id: "ws1",
+      workspace_id: "11111111-2222-4333-8444-555555555555",
       environment_id: "production",
       flag_name: "my-flag",
       confirm: false,
@@ -293,7 +293,7 @@ describe("killFeatureFlag", () => {
   it("kills flag when confirmed", async () => {
     mockFetch.mockReturnValue(jsonResponse({ killed: true }))
     const result = await api.killFeatureFlag({
-      workspace_id: "ws1",
+      workspace_id: "11111111-2222-4333-8444-555555555555",
       environment_id: "production",
       flag_name: "my-flag",
       confirm: true,
@@ -301,7 +301,7 @@ describe("killFeatureFlag", () => {
     expect(result.content[0].text).toContain("killed")
     expect(mockFetch).toHaveBeenCalledWith(
       expect.stringContaining(
-        "/splits/ws/ws1/my-flag/environments/production/kill",
+        "/splits/ws/11111111-2222-4333-8444-555555555555/my-flag/environments/production/kill",
       ),
       expect.objectContaining({ method: "PUT" }),
     )
@@ -310,7 +310,7 @@ describe("killFeatureFlag", () => {
   it("returns error when api fails", async () => {
     mockFetch.mockReturnValue(errorResponse())
     const result = await api.killFeatureFlag({
-      workspace_id: "ws1",
+      workspace_id: "11111111-2222-4333-8444-555555555555",
       environment_id: "production",
       flag_name: "my-flag",
       confirm: true,
@@ -323,14 +323,14 @@ describe("restoreFeatureFlag", () => {
   it("restores flag on success", async () => {
     mockFetch.mockReturnValue(jsonResponse({ killed: false }))
     const result = await api.restoreFeatureFlag({
-      workspace_id: "ws1",
+      workspace_id: "11111111-2222-4333-8444-555555555555",
       environment_id: "production",
       flag_name: "my-flag",
     })
     expect(result.content[0].text).toContain("killed")
     expect(mockFetch).toHaveBeenCalledWith(
       expect.stringContaining(
-        "/splits/ws/ws1/my-flag/environments/production/restore",
+        "/splits/ws/11111111-2222-4333-8444-555555555555/my-flag/environments/production/restore",
       ),
       expect.objectContaining({ method: "PUT" }),
     )
@@ -339,7 +339,7 @@ describe("restoreFeatureFlag", () => {
   it("returns error when api fails", async () => {
     mockFetch.mockReturnValue(errorResponse())
     const result = await api.restoreFeatureFlag({
-      workspace_id: "ws1",
+      workspace_id: "11111111-2222-4333-8444-555555555555",
       environment_id: "production",
       flag_name: "my-flag",
     })
@@ -351,13 +351,13 @@ describe("createFeatureFlag", () => {
   it("creates flag on success", async () => {
     mockFetch.mockReturnValue(jsonResponse({ name: "new-flag" }))
     const result = await api.createFeatureFlag({
-      workspace_id: "ws1",
+      workspace_id: "11111111-2222-4333-8444-555555555555",
       traffic_type: "user",
       name: "new-flag",
     })
     expect(result.content[0].text).toContain("new-flag")
     expect(mockFetch).toHaveBeenCalledWith(
-      expect.stringContaining("/splits/ws/ws1/trafficTypes/user"),
+      expect.stringContaining("/splits/ws/11111111-2222-4333-8444-555555555555/trafficTypes/user"),
       expect.objectContaining({ method: "POST" }),
     )
   })
@@ -365,7 +365,7 @@ describe("createFeatureFlag", () => {
   it("includes description in body when provided", async () => {
     mockFetch.mockReturnValue(jsonResponse({ name: "new-flag" }))
     await api.createFeatureFlag({
-      workspace_id: "ws1",
+      workspace_id: "11111111-2222-4333-8444-555555555555",
       traffic_type: "user",
       name: "new-flag",
       description: "My flag",
@@ -379,7 +379,7 @@ describe("createFeatureFlag", () => {
   it("returns error when api fails", async () => {
     mockFetch.mockReturnValue(errorResponse())
     const result = await api.createFeatureFlag({
-      workspace_id: "ws1",
+      workspace_id: "11111111-2222-4333-8444-555555555555",
       traffic_type: "user",
       name: "new-flag",
     })
@@ -393,13 +393,13 @@ describe("updateFeatureFlag", () => {
       jsonResponse({ name: "my-flag", description: "Updated" }),
     )
     const result = await api.updateFeatureFlag({
-      workspace_id: "ws1",
+      workspace_id: "11111111-2222-4333-8444-555555555555",
       flag_name: "my-flag",
       description: "Updated",
     })
     expect(result.content[0].text).toContain("Updated")
     expect(mockFetch).toHaveBeenCalledWith(
-      expect.stringContaining("/splits/ws/ws1/my-flag"),
+      expect.stringContaining("/splits/ws/11111111-2222-4333-8444-555555555555/my-flag"),
       expect.objectContaining({ method: "PATCH" }),
     )
   })
@@ -407,7 +407,7 @@ describe("updateFeatureFlag", () => {
   it("returns error when api fails", async () => {
     mockFetch.mockReturnValue(errorResponse())
     const result = await api.updateFeatureFlag({
-      workspace_id: "ws1",
+      workspace_id: "11111111-2222-4333-8444-555555555555",
       flag_name: "my-flag",
     })
     expect(result.content[0].text).toContain("Error:")
@@ -417,7 +417,7 @@ describe("updateFeatureFlag", () => {
 describe("deleteFeatureFlag", () => {
   it("blocks execution without confirm", async () => {
     const result = await api.deleteFeatureFlag({
-      workspace_id: "ws1",
+      workspace_id: "11111111-2222-4333-8444-555555555555",
       flag_name: "my-flag",
       confirm: false,
     })
@@ -429,13 +429,13 @@ describe("deleteFeatureFlag", () => {
   it("deletes flag when confirmed", async () => {
     mockFetch.mockReturnValue(Promise.resolve({ ok: true }))
     const result = await api.deleteFeatureFlag({
-      workspace_id: "ws1",
+      workspace_id: "11111111-2222-4333-8444-555555555555",
       flag_name: "my-flag",
       confirm: true,
     })
     expect(result.content[0].text).toContain("my-flag")
     expect(mockFetch).toHaveBeenCalledWith(
-      expect.stringContaining("/splits/ws/ws1/my-flag"),
+      expect.stringContaining("/splits/ws/11111111-2222-4333-8444-555555555555/my-flag"),
       expect.objectContaining({ method: "DELETE" }),
     )
   })
@@ -443,7 +443,7 @@ describe("deleteFeatureFlag", () => {
   it("returns error when api fails", async () => {
     mockFetch.mockReturnValue(Promise.resolve({ ok: false, status: 404 }))
     const result = await api.deleteFeatureFlag({
-      workspace_id: "ws1",
+      workspace_id: "11111111-2222-4333-8444-555555555555",
       flag_name: "my-flag",
       confirm: true,
     })
@@ -460,14 +460,14 @@ describe("listFlagDefinitions", () => {
       jsonResponse({ objects: [{ name: "my-flag" }], totalCount: 1 }),
     )
     const result = await api.listFlagDefinitions({
-      workspace_id: "ws1",
+      workspace_id: "11111111-2222-4333-8444-555555555555",
       environment_id: "production",
       limit: 20,
       offset: 0,
     })
     expect(result.content[0].text).toContain("my-flag")
     expect(mockFetch).toHaveBeenCalledWith(
-      expect.stringContaining("/splits/ws/ws1/environments/production"),
+      expect.stringContaining("/splits/ws/11111111-2222-4333-8444-555555555555/environments/production"),
       expect.any(Object),
     )
   })
@@ -475,7 +475,7 @@ describe("listFlagDefinitions", () => {
   it("returns error when fetch fails", async () => {
     mockFetch.mockReturnValue(errorResponse())
     const result = await api.listFlagDefinitions({
-      workspace_id: "ws1",
+      workspace_id: "11111111-2222-4333-8444-555555555555",
       environment_id: "production",
       limit: 20,
       offset: 0,
@@ -498,7 +498,7 @@ describe("listFlagDefinitions", () => {
       }),
     )
     const result = await api.listFlagDefinitions({
-      workspace_id: "ws1",
+      workspace_id: "11111111-2222-4333-8444-555555555555",
       environment_id: "production",
       limit: 20,
       offset: 0,
@@ -507,7 +507,7 @@ describe("listFlagDefinitions", () => {
     expect(result.content[0].text).toContain("f1")
     expect(result.content[0].text).not.toContain("treatments")
     expect(mockFetch).toHaveBeenCalledWith(
-      expect.stringContaining("/splits/ws/ws1/environments/production"),
+      expect.stringContaining("/splits/ws/11111111-2222-4333-8444-555555555555/environments/production"),
       expect.any(Object),
     )
   })
@@ -523,7 +523,7 @@ describe("listFlagDefinitions", () => {
     ]
     mockFetch.mockReturnValue(jsonResponse({ objects, totalCount: 1 }))
     const result = await api.listFlagDefinitions({
-      workspace_id: "ws1",
+      workspace_id: "11111111-2222-4333-8444-555555555555",
       environment_id: "production",
       limit: 20,
       offset: 0,
@@ -545,21 +545,21 @@ describe("createFlagDefinition", () => {
   it("creates definition on success", async () => {
     mockFetch.mockReturnValue(jsonResponse({ name: "my-flag" }))
     const result = await api.createFlagDefinition({
-      workspace_id: "ws1",
+      workspace_id: "11111111-2222-4333-8444-555555555555",
       environment_id: "production",
       flag_name: "my-flag",
       definition: validDefinition,
     })
     expect(result.content[0].text).toContain("my-flag")
     expect(mockFetch).toHaveBeenCalledWith(
-      expect.stringContaining("/splits/ws/ws1/my-flag/environments/production"),
+      expect.stringContaining("/splits/ws/11111111-2222-4333-8444-555555555555/my-flag/environments/production"),
       expect.objectContaining({ method: "POST" }),
     )
   })
 
   it("returns error for invalid JSON", async () => {
     const result = await api.createFlagDefinition({
-      workspace_id: "ws1",
+      workspace_id: "11111111-2222-4333-8444-555555555555",
       environment_id: "production",
       flag_name: "my-flag",
       definition: "not valid json {",
@@ -571,7 +571,7 @@ describe("createFlagDefinition", () => {
   it("returns error when api fails", async () => {
     mockFetch.mockReturnValue(errorResponse())
     const result = await api.createFlagDefinition({
-      workspace_id: "ws1",
+      workspace_id: "11111111-2222-4333-8444-555555555555",
       environment_id: "production",
       flag_name: "my-flag",
       definition: validDefinition,
@@ -582,7 +582,7 @@ describe("createFlagDefinition", () => {
   it("merges title and comment into the request body", async () => {
     mockFetch.mockReturnValue(jsonResponse({ name: "my-flag" }))
     await api.createFlagDefinition({
-      workspace_id: "ws1",
+      workspace_id: "11111111-2222-4333-8444-555555555555",
       environment_id: "production",
       flag_name: "my-flag",
       definition: validDefinition,
@@ -610,7 +610,7 @@ describe("createFlagDefinition", () => {
   it("omits title/comment from the body when not provided", async () => {
     mockFetch.mockReturnValue(jsonResponse({ name: "my-flag" }))
     await api.createFlagDefinition({
-      workspace_id: "ws1",
+      workspace_id: "11111111-2222-4333-8444-555555555555",
       environment_id: "production",
       flag_name: "my-flag",
       definition: validDefinition,
@@ -622,7 +622,7 @@ describe("createFlagDefinition", () => {
 
   it("returns error when definition is a JSON array and title/comment are given", async () => {
     const result = await api.createFlagDefinition({
-      workspace_id: "ws1",
+      workspace_id: "11111111-2222-4333-8444-555555555555",
       environment_id: "production",
       flag_name: "my-flag",
       definition: JSON.stringify([1, 2, 3]),
@@ -642,21 +642,21 @@ describe("updateFlagDefinition", () => {
   it("updates definition on success", async () => {
     mockFetch.mockReturnValue(jsonResponse({ name: "my-flag" }))
     const result = await api.updateFlagDefinition({
-      workspace_id: "ws1",
+      workspace_id: "11111111-2222-4333-8444-555555555555",
       environment_id: "production",
       flag_name: "my-flag",
       definition: validDefinition,
     })
     expect(result.content[0].text).toContain("my-flag")
     expect(mockFetch).toHaveBeenCalledWith(
-      expect.stringContaining("/splits/ws/ws1/my-flag/environments/production"),
+      expect.stringContaining("/splits/ws/11111111-2222-4333-8444-555555555555/my-flag/environments/production"),
       expect.objectContaining({ method: "PUT" }),
     )
   })
 
   it("returns error for invalid JSON", async () => {
     const result = await api.updateFlagDefinition({
-      workspace_id: "ws1",
+      workspace_id: "11111111-2222-4333-8444-555555555555",
       environment_id: "production",
       flag_name: "my-flag",
       definition: "{{broken",
@@ -668,7 +668,7 @@ describe("updateFlagDefinition", () => {
   it("returns error when api fails", async () => {
     mockFetch.mockReturnValue(errorResponse())
     const result = await api.updateFlagDefinition({
-      workspace_id: "ws1",
+      workspace_id: "11111111-2222-4333-8444-555555555555",
       environment_id: "production",
       flag_name: "my-flag",
       definition: validDefinition,
@@ -679,7 +679,7 @@ describe("updateFlagDefinition", () => {
   it("merges title and comment into the request body", async () => {
     mockFetch.mockReturnValue(jsonResponse({ name: "my-flag" }))
     await api.updateFlagDefinition({
-      workspace_id: "ws1",
+      workspace_id: "11111111-2222-4333-8444-555555555555",
       environment_id: "production",
       flag_name: "my-flag",
       definition: validDefinition,
@@ -707,7 +707,7 @@ describe("updateFlagDefinition", () => {
   it("omits title/comment from the body when not provided", async () => {
     mockFetch.mockReturnValue(jsonResponse({ name: "my-flag" }))
     await api.updateFlagDefinition({
-      workspace_id: "ws1",
+      workspace_id: "11111111-2222-4333-8444-555555555555",
       environment_id: "production",
       flag_name: "my-flag",
       definition: validDefinition,
@@ -719,7 +719,7 @@ describe("updateFlagDefinition", () => {
 
   it("returns error when definition is a JSON array and title/comment are given", async () => {
     const result = await api.updateFlagDefinition({
-      workspace_id: "ws1",
+      workspace_id: "11111111-2222-4333-8444-555555555555",
       environment_id: "production",
       flag_name: "my-flag",
       definition: JSON.stringify([1, 2, 3]),
@@ -733,7 +733,7 @@ describe("updateFlagDefinition", () => {
 describe("deleteFlagDefinition", () => {
   it("blocks execution without confirm", async () => {
     const result = await api.deleteFlagDefinition({
-      workspace_id: "ws1",
+      workspace_id: "11111111-2222-4333-8444-555555555555",
       environment_id: "production",
       flag_name: "my-flag",
       confirm: false,
@@ -746,7 +746,7 @@ describe("deleteFlagDefinition", () => {
   it("deletes definition when confirmed", async () => {
     mockFetch.mockReturnValue(Promise.resolve({ ok: true }))
     const result = await api.deleteFlagDefinition({
-      workspace_id: "ws1",
+      workspace_id: "11111111-2222-4333-8444-555555555555",
       environment_id: "production",
       flag_name: "my-flag",
       confirm: true,
@@ -754,7 +754,7 @@ describe("deleteFlagDefinition", () => {
     expect(result.content[0].text).toContain("my-flag")
     expect(result.content[0].text).toContain("production")
     expect(mockFetch).toHaveBeenCalledWith(
-      expect.stringContaining("/splits/ws/ws1/my-flag/environments/production"),
+      expect.stringContaining("/splits/ws/11111111-2222-4333-8444-555555555555/my-flag/environments/production"),
       expect.objectContaining({ method: "DELETE" }),
     )
   })
@@ -762,7 +762,7 @@ describe("deleteFlagDefinition", () => {
   it("returns error when api fails", async () => {
     mockFetch.mockReturnValue(Promise.resolve({ ok: false, status: 403 }))
     const result = await api.deleteFlagDefinition({
-      workspace_id: "ws1",
+      workspace_id: "11111111-2222-4333-8444-555555555555",
       environment_id: "production",
       flag_name: "my-flag",
       confirm: true,
@@ -784,7 +784,7 @@ describe("addSegmentToTreatment", () => {
       .mockReturnValueOnce(jsonResponse({ name: "my-flag" }))
 
     const result = await api.addSegmentToTreatment({
-      workspace_id: "ws1",
+      workspace_id: "11111111-2222-4333-8444-555555555555",
       environment_id: "production",
       flag_name: "my-flag",
       treatment: "on",
@@ -808,7 +808,7 @@ describe("addSegmentToTreatment", () => {
     )
 
     const result = await api.addSegmentToTreatment({
-      workspace_id: "ws1",
+      workspace_id: "11111111-2222-4333-8444-555555555555",
       environment_id: "production",
       flag_name: "my-flag",
       treatment: "on",
@@ -825,7 +825,7 @@ describe("addSegmentToTreatment", () => {
     )
 
     const result = await api.addSegmentToTreatment({
-      workspace_id: "ws1",
+      workspace_id: "11111111-2222-4333-8444-555555555555",
       environment_id: "production",
       flag_name: "my-flag",
       treatment: "on",
@@ -848,7 +848,7 @@ describe("addSegmentToTreatment", () => {
       .mockReturnValueOnce(jsonResponse({ name: "my-flag" }))
 
     await api.addSegmentToTreatment({
-      workspace_id: "ws1",
+      workspace_id: "11111111-2222-4333-8444-555555555555",
       environment_id: "production",
       flag_name: "my-flag",
       treatment: "on",
@@ -871,13 +871,13 @@ describe("listSegments", () => {
       jsonResponse({ objects: [{ name: "beta-users" }], totalCount: 1 }),
     )
     const result = await api.listSegments({
-      workspace_id: "ws1",
+      workspace_id: "11111111-2222-4333-8444-555555555555",
       limit: 20,
       offset: 0,
     })
     expect(result.content[0].text).toContain("beta-users")
     expect(mockFetch).toHaveBeenCalledWith(
-      expect.stringContaining("/segments/ws/ws1"),
+      expect.stringContaining("/segments/ws/11111111-2222-4333-8444-555555555555"),
       expect.any(Object),
     )
   })
@@ -885,7 +885,7 @@ describe("listSegments", () => {
   it("returns error when fetch fails", async () => {
     mockFetch.mockReturnValue(errorResponse())
     const result = await api.listSegments({
-      workspace_id: "ws1",
+      workspace_id: "11111111-2222-4333-8444-555555555555",
       limit: 20,
       offset: 0,
     })
@@ -899,14 +899,14 @@ describe("listSegmentDefinitions", () => {
       jsonResponse({ objects: [{ name: "beta-users" }], totalCount: 1 }),
     )
     const result = await api.listSegmentDefinitions({
-      workspace_id: "ws1",
+      workspace_id: "11111111-2222-4333-8444-555555555555",
       environment_id: "production",
       limit: 20,
       offset: 0,
     })
     expect(result.content[0].text).toContain("beta-users")
     expect(mockFetch).toHaveBeenCalledWith(
-      expect.stringContaining("/segments/ws/ws1/environments/production"),
+      expect.stringContaining("/segments/ws/11111111-2222-4333-8444-555555555555/environments/production"),
       expect.any(Object),
     )
   })
@@ -914,7 +914,7 @@ describe("listSegmentDefinitions", () => {
   it("returns error when fetch fails", async () => {
     mockFetch.mockReturnValue(errorResponse())
     const result = await api.listSegmentDefinitions({
-      workspace_id: "ws1",
+      workspace_id: "11111111-2222-4333-8444-555555555555",
       environment_id: "production",
       limit: 20,
       offset: 0,
@@ -960,13 +960,13 @@ describe("createSegment", () => {
   it("creates segment on success", async () => {
     mockFetch.mockReturnValue(jsonResponse({ name: "beta-users" }))
     const result = await api.createSegment({
-      workspace_id: "ws1",
+      workspace_id: "11111111-2222-4333-8444-555555555555",
       traffic_type: "user",
       name: "beta-users",
     })
     expect(result.content[0].text).toContain("beta-users")
     expect(mockFetch).toHaveBeenCalledWith(
-      expect.stringContaining("/segments/ws/ws1/trafficTypes/user"),
+      expect.stringContaining("/segments/ws/11111111-2222-4333-8444-555555555555/trafficTypes/user"),
       expect.objectContaining({ method: "POST" }),
     )
   })
@@ -974,7 +974,7 @@ describe("createSegment", () => {
   it("includes description and owners in body when provided", async () => {
     mockFetch.mockReturnValue(jsonResponse({ name: "beta-users" }))
     await api.createSegment({
-      workspace_id: "ws1",
+      workspace_id: "11111111-2222-4333-8444-555555555555",
       traffic_type: "user",
       name: "beta-users",
       description: "Beta testers",
@@ -990,7 +990,7 @@ describe("createSegment", () => {
   it("returns error when api fails", async () => {
     mockFetch.mockReturnValue(errorResponse())
     const result = await api.createSegment({
-      workspace_id: "ws1",
+      workspace_id: "11111111-2222-4333-8444-555555555555",
       traffic_type: "user",
       name: "beta-users",
     })
@@ -1257,7 +1257,7 @@ describe("disableSegmentInEnvironment", () => {
 describe("deleteSegment", () => {
   it("blocks execution without confirm", async () => {
     const result = await api.deleteSegment({
-      workspace_id: "ws1",
+      workspace_id: "11111111-2222-4333-8444-555555555555",
       segment_name: "beta-users",
       confirm: false,
     })
@@ -1269,13 +1269,13 @@ describe("deleteSegment", () => {
   it("deletes segment when confirmed", async () => {
     mockFetch.mockReturnValue(Promise.resolve({ ok: true }))
     const result = await api.deleteSegment({
-      workspace_id: "ws1",
+      workspace_id: "11111111-2222-4333-8444-555555555555",
       segment_name: "beta-users",
       confirm: true,
     })
     expect(result.content[0].text).toContain("beta-users")
     expect(mockFetch).toHaveBeenCalledWith(
-      expect.stringContaining("/segments/ws/ws1/beta-users"),
+      expect.stringContaining("/segments/ws/11111111-2222-4333-8444-555555555555/beta-users"),
       expect.objectContaining({ method: "DELETE" }),
     )
   })
@@ -1283,7 +1283,7 @@ describe("deleteSegment", () => {
   it("returns error when api fails", async () => {
     mockFetch.mockReturnValue(Promise.resolve({ ok: false, status: 403 }))
     const result = await api.deleteSegment({
-      workspace_id: "ws1",
+      workspace_id: "11111111-2222-4333-8444-555555555555",
       segment_name: "beta-users",
       confirm: true,
     })
@@ -1297,17 +1297,17 @@ describe("deleteSegment", () => {
 describe("listTrafficTypes", () => {
   it("returns traffic types on success", async () => {
     mockFetch.mockReturnValue(jsonResponse({ objects: [{ name: "user" }] }))
-    const result = await api.listTrafficTypes({ workspace_id: "ws1" })
+    const result = await api.listTrafficTypes({ workspace_id: "11111111-2222-4333-8444-555555555555" })
     expect(result.content[0].text).toContain("user")
     expect(mockFetch).toHaveBeenCalledWith(
-      expect.stringContaining("/trafficTypes/ws/ws1"),
+      expect.stringContaining("/trafficTypes/ws/11111111-2222-4333-8444-555555555555"),
       expect.any(Object),
     )
   })
 
   it("returns error when fetch fails", async () => {
     mockFetch.mockReturnValue(errorResponse())
-    const result = await api.listTrafficTypes({ workspace_id: "ws1" })
+    const result = await api.listTrafficTypes({ workspace_id: "11111111-2222-4333-8444-555555555555" })
     expect(result.content[0].text).toContain("Error:")
   })
 })
@@ -1319,17 +1319,17 @@ describe("listRolloutStatuses", () => {
     mockFetch.mockReturnValue(
       jsonResponse({ objects: [{ name: "Pre-Production" }] }),
     )
-    const result = await api.listRolloutStatuses({ workspace_id: "ws1" })
+    const result = await api.listRolloutStatuses({ workspace_id: "11111111-2222-4333-8444-555555555555" })
     expect(result.content[0].text).toContain("Pre-Production")
     expect(mockFetch).toHaveBeenCalledWith(
-      expect.stringContaining("/rolloutStatuses/ws/ws1"),
+      expect.stringContaining("/rolloutStatuses/ws/11111111-2222-4333-8444-555555555555"),
       expect.any(Object),
     )
   })
 
   it("returns error when fetch fails", async () => {
     mockFetch.mockReturnValue(errorResponse())
-    const result = await api.listRolloutStatuses({ workspace_id: "ws1" })
+    const result = await api.listRolloutStatuses({ workspace_id: "11111111-2222-4333-8444-555555555555" })
     expect(result.content[0].text).toContain("Error:")
   })
 })
@@ -1339,7 +1339,7 @@ describe("listRolloutStatuses", () => {
 describe("archiveFeatureFlag", () => {
   it("blocks execution without confirm", async () => {
     const result = await api.archiveFeatureFlag({
-      workspace_id: "ws1",
+      workspace_id: "11111111-2222-4333-8444-555555555555",
       flag_name: "my-flag",
       confirm: false,
     })
@@ -1351,13 +1351,13 @@ describe("archiveFeatureFlag", () => {
   it("archives flag when confirmed", async () => {
     mockFetch.mockReturnValue(jsonResponse({ archived: true }))
     const result = await api.archiveFeatureFlag({
-      workspace_id: "ws1",
+      workspace_id: "11111111-2222-4333-8444-555555555555",
       flag_name: "my-flag",
       confirm: true,
     })
     expect(result.content[0].text).toContain("archived")
     expect(mockFetch).toHaveBeenCalledWith(
-      expect.stringContaining("/splits/ws/ws1/my-flag/archive"),
+      expect.stringContaining("/splits/ws/11111111-2222-4333-8444-555555555555/my-flag/archive"),
       expect.objectContaining({ method: "POST" }),
     )
   })
@@ -1367,12 +1367,12 @@ describe("unarchiveFeatureFlag", () => {
   it("unarchives flag on success", async () => {
     mockFetch.mockReturnValue(jsonResponse({ archived: false }))
     const result = await api.unarchiveFeatureFlag({
-      workspace_id: "ws1",
+      workspace_id: "11111111-2222-4333-8444-555555555555",
       flag_name: "my-flag",
     })
     expect(result.content[0].text).toContain("archived")
     expect(mockFetch).toHaveBeenCalledWith(
-      expect.stringContaining("/splits/ws/ws1/my-flag/unarchive"),
+      expect.stringContaining("/splits/ws/11111111-2222-4333-8444-555555555555/my-flag/unarchive"),
       expect.objectContaining({ method: "POST" }),
     )
   })
@@ -1380,7 +1380,7 @@ describe("unarchiveFeatureFlag", () => {
   it("returns error when api fails", async () => {
     mockFetch.mockReturnValue(errorResponse())
     const result = await api.unarchiveFeatureFlag({
-      workspace_id: "ws1",
+      workspace_id: "11111111-2222-4333-8444-555555555555",
       flag_name: "my-flag",
     })
     expect(result.content[0].text).toContain("Error:")
@@ -1395,13 +1395,13 @@ describe("listRuleBasedSegments", () => {
       jsonResponse({ objects: [{ name: "power-users" }], totalCount: 1 }),
     )
     const result = await api.listRuleBasedSegments({
-      workspace_id: "ws1",
+      workspace_id: "11111111-2222-4333-8444-555555555555",
       limit: 20,
       offset: 0,
     })
     expect(result.content[0].text).toContain("power-users")
     expect(mockFetch).toHaveBeenCalledWith(
-      expect.stringContaining("/rule-based-segments/ws/ws1"),
+      expect.stringContaining("/rule-based-segments/ws/11111111-2222-4333-8444-555555555555"),
       expect.any(Object),
     )
   })
@@ -1409,7 +1409,7 @@ describe("listRuleBasedSegments", () => {
   it("returns error when fetch fails", async () => {
     mockFetch.mockReturnValue(errorResponse())
     const result = await api.listRuleBasedSegments({
-      workspace_id: "ws1",
+      workspace_id: "11111111-2222-4333-8444-555555555555",
       limit: 20,
       offset: 0,
     })
@@ -1421,7 +1421,7 @@ describe("getRuleBasedSegment", () => {
   it("returns segment on success", async () => {
     mockFetch.mockReturnValue(jsonResponse({ name: "power-users" }))
     const result = await api.getRuleBasedSegment({
-      workspace_id: "ws1",
+      workspace_id: "11111111-2222-4333-8444-555555555555",
       segment_name: "power-users",
     })
     expect(result.content[0].text).toContain("power-users")
@@ -1430,7 +1430,7 @@ describe("getRuleBasedSegment", () => {
   it("returns error when fetch fails", async () => {
     mockFetch.mockReturnValue(errorResponse())
     const result = await api.getRuleBasedSegment({
-      workspace_id: "ws1",
+      workspace_id: "11111111-2222-4333-8444-555555555555",
       segment_name: "power-users",
     })
     expect(result.content[0].text).toContain("Error:")
@@ -1441,13 +1441,13 @@ describe("createRuleBasedSegment", () => {
   it("creates segment on success", async () => {
     mockFetch.mockReturnValue(jsonResponse({ name: "power-users" }))
     const result = await api.createRuleBasedSegment({
-      workspace_id: "ws1",
+      workspace_id: "11111111-2222-4333-8444-555555555555",
       traffic_type: "user",
       name: "power-users",
     })
     expect(result.content[0].text).toContain("power-users")
     expect(mockFetch).toHaveBeenCalledWith(
-      expect.stringContaining("/rule-based-segments/ws/ws1/trafficTypes/user"),
+      expect.stringContaining("/rule-based-segments/ws/11111111-2222-4333-8444-555555555555/trafficTypes/user"),
       expect.objectContaining({ method: "POST" }),
     )
   })
@@ -1455,7 +1455,7 @@ describe("createRuleBasedSegment", () => {
   it("returns error when api fails", async () => {
     mockFetch.mockReturnValue(errorResponse())
     const result = await api.createRuleBasedSegment({
-      workspace_id: "ws1",
+      workspace_id: "11111111-2222-4333-8444-555555555555",
       traffic_type: "user",
       name: "power-users",
     })
@@ -1466,7 +1466,7 @@ describe("createRuleBasedSegment", () => {
 describe("deleteRuleBasedSegment", () => {
   it("blocks execution without confirm", async () => {
     const result = await api.deleteRuleBasedSegment({
-      workspace_id: "ws1",
+      workspace_id: "11111111-2222-4333-8444-555555555555",
       segment_name: "power-users",
       confirm: false,
     })
@@ -1478,13 +1478,13 @@ describe("deleteRuleBasedSegment", () => {
   it("deletes segment when confirmed", async () => {
     mockFetch.mockReturnValue(Promise.resolve({ ok: true }))
     const result = await api.deleteRuleBasedSegment({
-      workspace_id: "ws1",
+      workspace_id: "11111111-2222-4333-8444-555555555555",
       segment_name: "power-users",
       confirm: true,
     })
     expect(result.content[0].text).toContain("power-users")
     expect(mockFetch).toHaveBeenCalledWith(
-      expect.stringContaining("/rule-based-segments/ws/ws1/power-users"),
+      expect.stringContaining("/rule-based-segments/ws/11111111-2222-4333-8444-555555555555/power-users"),
       expect.objectContaining({ method: "DELETE" }),
     )
   })
@@ -1494,7 +1494,7 @@ describe("enableRuleBasedSegmentDefinition", () => {
   it("enables segment definition on success", async () => {
     mockFetch.mockReturnValue(jsonResponse({}))
     const result = await api.enableRuleBasedSegmentDefinition({
-      workspace_id: "ws1",
+      workspace_id: "11111111-2222-4333-8444-555555555555",
       environment_id: "production",
       segment_name: "power-users",
     })
@@ -1509,7 +1509,7 @@ describe("enableRuleBasedSegmentDefinition", () => {
 describe("disableRuleBasedSegmentDefinition", () => {
   it("blocks execution without confirm", async () => {
     const result = await api.disableRuleBasedSegmentDefinition({
-      workspace_id: "ws1",
+      workspace_id: "11111111-2222-4333-8444-555555555555",
       environment_id: "production",
       segment_name: "power-users",
       confirm: false,
@@ -1522,7 +1522,7 @@ describe("disableRuleBasedSegmentDefinition", () => {
   it("disables segment definition when confirmed", async () => {
     mockFetch.mockReturnValue(Promise.resolve({ ok: true }))
     const result = await api.disableRuleBasedSegmentDefinition({
-      workspace_id: "ws1",
+      workspace_id: "11111111-2222-4333-8444-555555555555",
       environment_id: "production",
       segment_name: "power-users",
       confirm: true,
@@ -1550,7 +1550,7 @@ describe("list tools request the page size with limit", () => {
 
   it("list_segments sends limit", async () => {
     mockFetch.mockReturnValue(jsonResponse({ objects: [], totalCount: 0 }))
-    await api.listSegments({ workspace_id: "ws1", limit: 20, offset: 0 })
+    await api.listSegments({ workspace_id: "11111111-2222-4333-8444-555555555555", limit: 20, offset: 0 })
     const url = new URL(mockFetch.mock.calls[0][0] as string)
     expect(url.searchParams.get("limit")).toBe("20")
     expect(url.searchParams.has("size")).toBe(false)
@@ -1559,7 +1559,7 @@ describe("list tools request the page size with limit", () => {
   it("list_segment_definitions sends limit", async () => {
     mockFetch.mockReturnValue(jsonResponse({ objects: [], totalCount: 0 }))
     await api.listSegmentDefinitions({
-      workspace_id: "ws1",
+      workspace_id: "11111111-2222-4333-8444-555555555555",
       environment_id: "production",
       limit: 20,
       offset: 0,
@@ -1585,7 +1585,7 @@ describe("list tools request the page size with limit", () => {
   it("list_rule_based_segments sends limit", async () => {
     mockFetch.mockReturnValue(jsonResponse({ objects: [], totalCount: 0 }))
     await api.listRuleBasedSegments({
-      workspace_id: "ws1",
+      workspace_id: "11111111-2222-4333-8444-555555555555",
       limit: 20,
       offset: 0,
     })
@@ -1620,11 +1620,11 @@ describe("rate limiting", () => {
   it("retries a 429 and returns the eventual success", async () => {
     mockFetch
       .mockReturnValueOnce(rateLimitedResponse("3"))
-      .mockReturnValueOnce(jsonResponse({ objects: [{ id: "ws1" }] }))
+      .mockReturnValueOnce(jsonResponse({ objects: [{ id: "11111111-2222-4333-8444-555555555555" }] }))
     const pending = api.listWorkspaces({ limit: 20, offset: 0 })
     await vi.runAllTimersAsync()
     const result = await pending
-    expect(result.content[0].text).toContain("ws1")
+    expect(result.content[0].text).toContain("11111111-2222-4333-8444-555555555555")
     expect(mockFetch).toHaveBeenCalledTimes(2)
   })
 
@@ -1642,7 +1642,7 @@ describe("rate limiting", () => {
       .mockReturnValueOnce(rateLimitedResponse("1"))
       .mockReturnValueOnce(Promise.resolve({ ok: true, status: 200 }))
     const pending = api.deleteSegment({
-      workspace_id: "ws1",
+      workspace_id: "11111111-2222-4333-8444-555555555555",
       segment_name: "beta-users",
       confirm: true,
     })
