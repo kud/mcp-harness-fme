@@ -4,6 +4,28 @@ All notable changes to this project are documented here.
 
 ---
 
+## [1.8.0] — 2026-11-24
+
+### Features
+
+- New `compare_flag_environments` tool shows one flag across every environment, or the ones you name, side by side, with a `differences` list of what is not the same everywhere. ([e03b350](https://github.com/kud/mcp-harness-fme/commit/e03b3503eb74be58314c70bd547dded799b1e5ab))
+- New `get_flag_history` tool lists a flag's changes in one environment, newest first, with approvers, status and a field-level diff. It reads change requests, so only changes made through an approval flow appear; changes made without one are not recorded by the API. ([e03b350](https://github.com/kud/mcp-harness-fme/commit/e03b3503eb74be58314c70bd547dded799b1e5ab))
+- `workspace_id` now accepts a workspace name as well as an ID across the tools, and flag owners come back with their display names beside their IDs. Requires `@kud/harness-fme` 0.2.0. ([e03b350](https://github.com/kud/mcp-harness-fme/commit/e03b3503eb74be58314c70bd547dded799b1e5ab))
+- Times now include an ISO timestamp alongside the epoch value, so they read without conversion. ([e03b350](https://github.com/kud/mcp-harness-fme/commit/e03b3503eb74be58314c70bd547dded799b1e5ab))
+
+### Fixes
+
+- Resolved the advisories reported by `npm audit` in the dependency tree. ([1475ee6](https://github.com/kud/mcp-harness-fme/commit/1475ee6ef9afaaa919b8f40ed89f4c29560b345d))
+
+<details>
+<summary>Internal (1 commit)</summary>
+
+- Added the `homepage` field to `package.json`.
+
+</details>
+
+---
+
 ## [1.7.0] — 2026-11-12
 
 ### Features
